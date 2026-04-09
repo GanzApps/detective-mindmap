@@ -1,1 +1,56 @@
 @import "tailwindcss";
+
+:root {
+  /* Backgrounds */
+  --shell-bg:              #020617;   /* slate-950 */
+  --shell-surface:         #0f172a;   /* slate-900 */
+  --shell-surface-raised:  #1e293b;   /* slate-800 */
+  --shell-surface-overlay: #1e293b99;
+
+  /* Text */
+  --shell-text-primary:    #f8fafc;   /* slate-50  */
+  --shell-text-secondary:  #cbd5e1;   /* slate-300 */
+  --shell-text-muted:      #64748b;   /* slate-500 */
+  --shell-text-inverse:    #020617;
+
+  /* Borders */
+  --shell-border:          #1e293b;   /* slate-800 */
+  --shell-border-strong:   #334155;   /* slate-700 */
+  --shell-border-focus:    #22d3ee;   /* cyan-400  */
+
+  /* Accent */
+  --shell-accent:          #22d3ee;   /* cyan-400  */
+  --shell-accent-hover:    #67e8f9;   /* cyan-300  */
+  --shell-accent-muted:    rgba(34, 211, 238, 0.10);
+  --shell-accent-fg:       #020617;
+
+  /* Semantic */
+  --shell-destructive:     #f43f5e;   /* rose-500  */
+  --shell-destructive-bg:  rgba(244, 63, 94, 0.12);
+
+  /* Spacing */
+  --shell-space-xs:  0.25rem;
+  --shell-space-sm:  0.5rem;
+  --shell-space-md:  1rem;
+  --shell-space-lg:  1.5rem;
+  --shell-space-xl:  2rem;
+  --shell-space-2xl: 3rem;
+  --shell-space-3xl: 4rem;
+
+  /* Radii */
+  --shell-radius-sm:   0.5rem;
+  --shell-radius-md:   0.75rem;
+  --shell-radius-lg:   1rem;
+  --shell-radius-xl:   1.25rem;
+  --shell-radius-pill: 9999px;
+
+  /* Shadows */
+  --shell-shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.4);
+  --shell-shadow-md: 0 4px 12px 0 rgba(0,0,0,0.5);
+  --shell-shadow-lg: 0 10px 40px -4px rgba(0,0,0,0.6);
+
+  /* Layout */
+  --shell-header-h:  4rem;
+  --shell-footer-h:  3rem;
+  --shell-sidebar-w: 20rem;
+}
