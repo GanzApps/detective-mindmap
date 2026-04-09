@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
-:root {
+/* ─── Shell token values ──────────────────────────────────────────────────── */
+/* Default: dark theme. Override with [data-theme="light"] on <html>.          */
+
+:root,
+[data-theme="dark"] {
   /* Backgrounds */
-  --shell-bg:              #020617;   /* slate-950 */
-  --shell-surface:         #0f172a;   /* slate-900 */
-  --shell-surface-raised:  #1e293b;   /* slate-800 */
+  --shell-bg:              #020617;
+  --shell-surface:         #0f172a;
+  --shell-surface-raised:  #1e293b;
   --shell-surface-overlay: #1e293b99;
 
   /* Text */
-  --shell-text-primary:    #f8fafc;   /* slate-50  */
-  --shell-text-secondary:  #cbd5e1;   /* slate-300 */
-  --shell-text-muted:      #64748b;   /* slate-500 */
+  --shell-text-primary:    #f8fafc;
+  --shell-text-secondary:  #cbd5e1;
+  --shell-text-muted:      #64748b;
   --shell-text-inverse:    #020617;
 
   /* Borders */
-  --shell-border:          #1e293b;   /* slate-800 */
-  --shell-border-strong:   #334155;   /* slate-700 */
-  --shell-border-focus:    #22d3ee;   /* cyan-400  */
+  --shell-border:          #1e293b;
+  --shell-border-strong:   #334155;
+  --shell-border-focus:    #7c3aed;
 
-  /* Accent */
-  --shell-accent:          #22d3ee;   /* cyan-400  */
-  --shell-accent-hover:    #67e8f9;   /* cyan-300  */
-  --shell-accent-muted:    rgba(34, 211, 238, 0.10);
-  --shell-accent-fg:       #020617;
+  /* Accent (purple) */
+  --shell-accent:          #7c3aed;
+  --shell-accent-hover:    #6d28d9;
+  --shell-accent-muted:    rgba(124, 58, 237, 0.15);
+  --shell-accent-fg:       #ffffff;
 
   /* Semantic */
-  --shell-destructive:     #f43f5e;   /* rose-500  */
+  --shell-destructive:     #f43f5e;
   --shell-destructive-bg:  rgba(244, 63, 94, 0.12);
 
   /* Spacing */
@@ -49,8 +53,96 @@
   --shell-shadow-md: 0 4px 12px 0 rgba(0,0,0,0.5);
   --shell-shadow-lg: 0 10px 40px -4px rgba(0,0,0,0.6);
 
-  /* Layout */
+  /* Layout bands */
   --shell-header-h:  4rem;
   --shell-footer-h:  3rem;
   --shell-sidebar-w: 20rem;
+}
+
+[data-theme="light"] {
+  /* Backgrounds */
+  --shell-bg:              #f8fafc;
+  --shell-surface:         #ffffff;
+  --shell-surface-raised:  #f1f5f9;
+  --shell-surface-overlay: #f1f5f999;
+
+  /* Text */
+  --shell-text-primary:    #0f172a;
+  --shell-text-secondary:  #475569;
+  --shell-text-muted:      #94a3b8;
+  --shell-text-inverse:    #f8fafc;
+
+  /* Borders */
+  --shell-border:          #e2e8f0;
+  --shell-border-strong:   #cbd5e1;
+  --shell-border-focus:    #7c3aed;
+
+  /* Accent (purple) */
+  --shell-accent:          #7c3aed;
+  --shell-accent-hover:    #6d28d9;
+  --shell-accent-muted:    rgba(124, 58, 237, 0.10);
+  --shell-accent-fg:       #ffffff;
+
+  /* Semantic */
+  --shell-destructive:     #e11d48;
+  --shell-destructive-bg:  rgba(225, 29, 72, 0.08);
+
+  /* Shadows */
+  --shell-shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.08);
+  --shell-shadow-md: 0 4px 12px 0 rgba(0,0,0,0.12);
+  --shell-shadow-lg: 0 10px 40px -4px rgba(0,0,0,0.16);
+}
+
+/* ─── Tailwind v4 theme extensions ───────────────────────────────────────── */
+/* @theme inline defers resolution to runtime so CSS vars reflect active theme */
+
+@theme inline {
+  /* Shell colors */
+  --color-shell-bg:               var(--shell-bg);
+  --color-shell-surface:          var(--shell-surface);
+  --color-shell-surface-raised:   var(--shell-surface-raised);
+  --color-shell-surface-overlay:  var(--shell-surface-overlay);
+
+  --color-shell-text-primary:     var(--shell-text-primary);
+  --color-shell-text-secondary:   var(--shell-text-secondary);
+  --color-shell-text-muted:       var(--shell-text-muted);
+  --color-shell-text-inverse:     var(--shell-text-inverse);
+
+  --color-shell-border:           var(--shell-border);
+  --color-shell-border-strong:    var(--shell-border-strong);
+  --color-shell-border-focus:     var(--shell-border-focus);
+
+  --color-shell-accent:           var(--shell-accent);
+  --color-shell-accent-hover:     var(--shell-accent-hover);
+  --color-shell-accent-muted:     var(--shell-accent-muted);
+  --color-shell-accent-fg:        var(--shell-accent-fg);
+
+  --color-shell-destructive:      var(--shell-destructive);
+  --color-shell-destructive-bg:   var(--shell-destructive-bg);
+
+  /* Shell spacing */
+  --spacing-shell-xs:  var(--shell-space-xs);
+  --spacing-shell-sm:  var(--shell-space-sm);
+  --spacing-shell-md:  var(--shell-space-md);
+  --spacing-shell-lg:  var(--shell-space-lg);
+  --spacing-shell-xl:  var(--shell-space-xl);
+  --spacing-shell-2xl: var(--shell-space-2xl);
+  --spacing-shell-3xl: var(--shell-space-3xl);
+
+  /* Shell radii */
+  --radius-shell-sm:   var(--shell-radius-sm);
+  --radius-shell-md:   var(--shell-radius-md);
+  --radius-shell-lg:   var(--shell-radius-lg);
+  --radius-shell-xl:   var(--shell-radius-xl);
+  --radius-shell-pill: var(--shell-radius-pill);
+
+  /* Shell shadows */
+  --shadow-shell-sm: var(--shell-shadow-sm);
+  --shadow-shell-md: var(--shell-shadow-md);
+  --shadow-shell-lg: var(--shell-shadow-lg);
+
+  /* Shell layout sizes */
+  --height-shell-header:  var(--shell-header-h);
+  --height-shell-footer:  var(--shell-footer-h);
+  --width-shell-sidebar:  var(--shell-sidebar-w);
 }
