@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 Phase: 8 of 12 (Design Tokens + Shell Alignment)
 Plan: 0 of 3 in current phase
 Status: Milestone v2.0 initialized - ready to plan Phase 8
-Last activity: 2026-04-10 - Milestone v2.0 requirements and roadmap created
+Last activity: 2026-04-10 - Phase 8 context gathered
 
 Progress: [----------] 0%
 
@@ -72,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-10
-Stopped at: Milestone v2.0 initialized
-Resume file: .planning/ROADMAP.md
+Stopped at: Phase 8 context gathered
+Resume file: .planning/phases/08-design-tokens-shell-alignment/08-CONTEXT.md
