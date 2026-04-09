@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-09)
+See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** A detective must be able to load a case, see all entities and their connections in an interactive graph, and switch between 2D and 3D views without losing context.
-**Current focus:** Phase 7 complete - export workflow verified
+**Current focus:** Milestone v2.0 planning - investigation workspace revamp
 
 ## Current Position
 
-Phase: 7 of 7 (Export)
-Plan: 4 of 4 in current phase
-Status: Phase 7 complete - v1 roadmap implemented
-Last activity: 2026-04-09 - Phase 7 executed and verified
+Phase: 8 of 12 (Design Tokens + Shell Alignment)
+Plan: 0 of 3 in current phase
+Status: Milestone v2.0 initialized - ready to plan Phase 8
+Last activity: 2026-04-10 - Milestone v2.0 requirements and roadmap created
 
-Progress: [##########] 100%
+Progress: [----------] 0%
 
 ## Performance Metrics
 
@@ -71,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-09
-Stopped at: Phase 7 executed and verified
-Resume file: .planning/phases/07-export/07-VERIFICATION.md
+Last session: 2026-04-10
+Stopped at: Milestone v2.0 initialized
+Resume file: .planning/ROADMAP.md

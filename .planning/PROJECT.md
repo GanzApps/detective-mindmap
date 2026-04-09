@@ -8,6 +8,17 @@ A Next.js web application for small detective teams (2-5 people) to organize and
 
 A detective must be able to load a case, see all entities and their connections in an interactive graph, and switch between 2D and 3D views without losing context.
 
+## Current Milestone: v2.0 Investigation Workspace Revamp
+
+**Goal:** Rebuild the dashboard and graph workspace so the shell, graph interactions, filters, analysis panel, and AI command surface align with the saved reference model while preserving the investigation graph as the core product surface.
+
+**Target features:**
+- Reference-aligned dashboard and workspace layout with a shared light/dark visual system
+- Unified `2D` / `3D` graph behavior with shared selection, focus, and manual placement intent
+- Left-side `Raw Evidence` / `Filters & Layers` tabs plus a right-side on-canvas analysis panel
+- Typeahead-first search, dimmed non-neighbor focus mode, iconic node shapes, and reference-aligned colors
+- Persistent minimap, timeline, and AI command surface with known-intent graph/workspace triggers
+
 ## Requirements
 
 ### Validated
@@ -30,25 +41,28 @@ A detective must be able to load a case, see all entities and their connections 
 
 ### Active
 
-- [x] Filters & Layers control panel
-- [x] Timeline bar at the bottom of the canvas
-- [x] AI command input bar (UI placeholder - no logic in v1)
-- [x] Local persistence for case and workspace state
-- [x] Export report (snapshot/PDF/shareable of the investigation)
+- [ ] Reference-aligned dashboard shell and investigation workspace layout
+- [ ] Shared `2D` / `3D` graph interaction model with aligned selection and focus behavior
+- [ ] Search dropdown selection flow with selected-network emphasis and dimmed non-neighbor context
+- [ ] Iconic entity-type node shapes and a calmer reference-aligned color system
+- [ ] Left-panel tabbed evidence/filter architecture and right-side on-canvas analysis panel
+- [ ] Persistent minimap, timeline, and light/dark theme system across dashboard and workspace
+- [ ] Known-intent AI command surface that triggers predefined graph/workspace functions
 - [ ] Well-structured Next.js app: reusable components, testable logic, clean separation of concerns
 
 ### Out of Scope
 
 - Authentication / user accounts - no auth in v1, small team shares one instance
-- Real AI/LLM integration - command bar is placeholder only in v1
+- Freeform AI/LLM interpretation - v2.0 will use known intents and predefined graph/workspace triggers first
 - Real-time collaboration (WebSockets, multiplayer) - small team, async sharing via export
-- Backend database - mock data only; API wiring deferred to v2
+- Backend database - mock data only; API wiring deferred beyond the workspace revamp milestone
 - Mobile layout - desktop-first, complex graph interactions do not map well to touch
 
 ## Context
 
 - The UI reference (`image.png`) shows a dark-themed investigation board: case header at top, evidence sidebar on the left, a large 2D relationship graph in the center, timeline and AI bar at the bottom.
 - The 3D graph reference (`3d_mindmap_fixed.html`) is a vanilla Canvas 3D mindmap with rotation, zoom, node highlighting, depth-based opacity, and glow effects. This interaction model should be reproduced in the 3D mode.
+- Milestone `v2.0` uses the saved workspace references under `.planning/references/mac-ui-reference/` and the interpretation notes in `.planning/notes/` as the shell and behavior alignment source of truth.
 - D3.js force layout is chosen for the 2D graph for maximum customizability and no abstraction ceiling when investigation graphs get complex.
 - The 3D mode should reuse the same node/edge data structure as 2D; only the renderer differs.
 - Components must remain individually testable: graph logic (D3 force, projection math) stays separated from React rendering.
@@ -97,4 +111,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-09 after Phase 7 completion*
+*Last updated: 2026-04-10 for milestone v2.0 kickoff*
