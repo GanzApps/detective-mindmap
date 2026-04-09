@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { type Case } from '@/lib/data/dataTypes';
 import { type ExportFormat } from '@/lib/export/exportTypes';
 
@@ -41,6 +42,9 @@ export default function CaseHeader({
   onExport: (format: ExportFormat) => void;
   isExporting?: boolean;
 }) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+
   return (
     <header className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-lg shadow-shell-sm">
       <div className="flex flex-col gap-shell-md xl:flex-row xl:items-start xl:justify-between">
@@ -69,67 +73,81 @@ export default function CaseHeader({
         {/* Top action area */}
         <div className="flex flex-wrap items-center gap-shell-sm">
           {/* Export menu */}
-          <details className="relative">
-            <summary className="list-none cursor-pointer rounded-shell-pill bg-shell-accent px-shell-md py-shell-sm text-sm font-semibold text-shell-accent-fg transition hover:bg-[var(--shell-accent-hover)]">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setExportOpen(false), 150)}
+              className="rounded-shell-pill bg-shell-accent px-shell-md py-shell-sm text-sm font-semibold text-shell-accent-fg transition hover:bg-shell-accent-hover"
+            >
               {isExporting ? 'Exporting\u2026' : 'Export Report'}
-            </summary>
-            <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('png')}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                PNG snapshot
-              </button>
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('pdf')}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                PDF report
-              </button>
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('both')}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                PNG + PDF
-              </button>
-            </div>
-          </details>
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('png'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PNG snapshot
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('pdf'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PDF report
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('both'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PNG + PDF
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Actions menu */}
-          <details className="relative">
-            <summary className="list-none cursor-pointer rounded-shell-pill border border-shell-border px-shell-md py-shell-sm text-sm font-semibold text-shell-text-primary transition hover:border-shell-border-strong hover:bg-shell-surface-raised">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActionsOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setActionsOpen(false), 150)}
+              className="rounded-shell-pill border border-shell-border px-shell-md py-shell-sm text-sm font-semibold text-shell-text-primary transition hover:border-shell-border-strong hover:bg-shell-surface-raised"
+            >
               Actions
-            </summary>
-            <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
-              <button
-                type="button"
-                onClick={onOpenEntityModal}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
-              >
-                Add entity
-              </button>
-              <button
-                type="button"
-                onClick={onOpenConnectionModal}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
-              >
-                Add connection
-              </button>
-              <button
-                type="button"
-                onClick={onClearHighlights}
-                className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
-              >
-                Clear evidence highlight
-              </button>
-            </div>
-          </details>
+            </button>
+            {actionsOpen && (
+              <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
+                <button
+                  type="button"
+                  onClick={() => { onOpenEntityModal(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Add entity
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onOpenConnectionModal(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Add connection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onClearHighlights(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Clear evidence highlight
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
