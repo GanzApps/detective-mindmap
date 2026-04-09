@@ -28,9 +28,9 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-slate-800 bg-slate-900/70 p-8">
-          Loading case...
+      <main className="min-h-screen bg-shell-bg px-shell-lg py-shell-xl text-shell-text-primary">
+        <div className="mx-auto max-w-7xl rounded-shell-xl border border-shell-border bg-shell-surface p-shell-lg shadow-shell-md">
+          <p className="text-sm text-shell-text-muted">Loading case\u2026</p>
         </div>
       </main>
     );
@@ -38,9 +38,11 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
 
   if (!caseData) {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-rose-500/20 bg-rose-950/30 p-8 text-rose-100">
-          {error ?? 'Case not found.'}
+      <main className="min-h-screen bg-shell-bg px-shell-lg py-shell-xl text-shell-text-primary">
+        <div className="mx-auto max-w-7xl rounded-shell-xl border border-shell-destructive/20 bg-shell-destructive-bg p-shell-lg">
+          <p className="text-sm text-shell-destructive">
+            {error ?? 'Case not found.'}
+          </p>
         </div>
       </main>
     );
@@ -93,7 +95,7 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+    <main className="min-h-screen bg-shell-bg px-shell-lg py-shell-xl text-shell-text-primary">
       <CaseWorkspaceShell
         caseData={resolvedCaseData}
         highlightedEvidenceId={highlightedEvidenceId}
