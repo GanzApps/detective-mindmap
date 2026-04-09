@@ -1,0 +1,317 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#wrap{width:100%;height:620px;position:relative;overflow:hidden;border-radius:14px;background:#07090f}
+#cv{width:100%;height:100%;display:block;cursor:grab}
+#cv:active{cursor:grabbing}
+#tip{position:absolute;pointer-events:none;opacity:0;background:rgba(15,18,30,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:7px 12px;font-size:12px;color:#e0e6ff;transition:opacity .12s;white-space:nowrap;z-index:10}
+#toolbar{position:absolute;top:12px;left:12px;display:flex;gap:6px}
+.btn{font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid rgba(255,255,255,0.13);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.55);cursor:pointer;transition:all .15s}
+.btn:hover{background:rgba(255,255,255,0.11);color:#fff}
+#panel{position:absolute;top:12px;right:12px;width:186px;opacity:0;transition:opacity .2s;pointer-events:none}
+#panel.show{opacity:1;pointer-events:auto}
+#pan-box{background:rgba(12,15,26,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:11px;padding:13px}
+#pan-name{font-size:13px;font-weight:500;color:#fff;margin-bottom:3px}
+#pan-meta{font-size:11px;color:rgba(255,255,255,0.38);margin-bottom:10px}
+#pan-btn{width:100%;font-size:11px;padding:7px;border-radius:7px;border:1px solid rgba(110,150,255,0.28);background:rgba(110,150,255,0.07);color:rgba(140,175,255,0.9);cursor:pointer;transition:all .15s}
+#pan-btn:hover{background:rgba(110,150,255,0.18);color:#fff}
+#hint{position:absolute;bottom:13px;left:13px;font-size:11px;color:rgba(255,255,255,0.22)}
+</style>
+
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="tip"></div>
+  <div id="toolbar">
+    <button class="btn" onclick="resetView()">Reset</button>
+    <button class="btn" id="rotBtn" onclick="toggleRot()">Pause</button>
+    <button class="btn" onclick="toggleLabels()">Labels</button>
+  </div>
+  <div id="panel">
+    <div id="pan-box">
+      <div id="pan-name"></div>
+      <div id="pan-meta"></div>
+      <button id="pan-btn" onclick="exploreSelected()">Explore topic ↗</button>
+    </div>
+  </div>
+  <div id="hint">Drag to rotate · Scroll to zoom · Click node to highlight</div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+const panel = document.getElementById('panel');
+const panName = document.getElementById('pan-name');
+const panMeta = document.getElementById('pan-meta');
+
+let W, H, dpr;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = cv.offsetWidth; H = cv.offsetHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+let rotX = 0.28, rotY = 0.55;
+let zoom = 1;
+let dragging = false, lx = 0, ly = 0;
+let autoRot = true;
+let showLabels = true;
+let selectedId = null;
+let hoverId = null;
+let exploreNode = null;
+
+const C = {
+  0: { fill:'#a78bfa', glow:'rgba(167,139,250,', line:'rgba(167,139,250,' },
+  1: { fill:'#38bdf8', glow:'rgba(56,189,248,',  line:'rgba(56,189,248,'  },
+  2: { fill:'#f472b6', glow:'rgba(244,114,182,', line:'rgba(244,114,182,' },
+  3: { fill:'#34d399', glow:'rgba(52,211,153,',  line:'rgba(52,211,153,'  },
+};
+
+const NODES = [
+  {id:0,  label:'Machine\nLearning', x:0,    y:0,    z:0,    tier:0, parent:null},
+  {id:1,  label:'Supervised',        x:220,  y:30,   z:60,   tier:1, parent:0},
+  {id:2,  label:'Unsupervised',      x:-200, y:50,   z:-80,  tier:1, parent:0},
+  {id:3,  label:'Reinforcement',     x:20,   y:-210, z:130,  tier:1, parent:0},
+  {id:4,  label:'Neural Nets',       x:-50,  y:170,  z:-160, tier:1, parent:0},
+  {id:5,  label:'Deep Learning',     x:150,  y:-90,  z:-200, tier:1, parent:0},
+  {id:6,  label:'Regression',        x:350,  y:90,   z:140,  tier:2, parent:1},
+  {id:7,  label:'Classification',    x:300,  y:-60,  z:50,   tier:2, parent:1},
+  {id:8,  label:'SVM',               x:380,  y:30,   z:-40,  tier:2, parent:1},
+  {id:9,  label:'Random Forest',     x:310,  y:140,  z:-90,  tier:2, parent:1},
+  {id:10, label:'Clustering',        x:-320, y:110,  z:20,   tier:2, parent:2},
+  {id:11, label:'PCA',               x:-265, y:10,   z:-185, tier:2, parent:2},
+  {id:12, label:'Autoencoders',      x:-335, y:-80,  z:85,   tier:2, parent:2},
+  {id:13, label:'Policy',            x:75,   y:-315, z:200,  tier:2, parent:3},
+  {id:14, label:'Reward Fn',         x:-85,  y:-295, z:80,   tier:2, parent:3},
+  {id:15, label:'Q-Learning',        x:165,  y:-305, z:-65,  tier:2, parent:3},
+  {id:16, label:'CNN',               x:-135, y:305,  z:-225, tier:2, parent:4},
+  {id:17, label:'RNN',               x:85,   y:285,  z:-225, tier:2, parent:4},
+  {id:18, label:'GAN',               x:-205, y:245,  z:-105, tier:2, parent:4},
+  {id:19, label:'Transformer',       x:245,  y:-195, z:-295, tier:2, parent:5},
+  {id:20, label:'BERT',              x:345,  y:-255, z:-185, tier:2, parent:5},
+  {id:21, label:'GPT',               x:205,  y:-305, z:-185, tier:2, parent:5},
+  {id:22, label:'Linear Reg',        x:455,  y:165,  z:205,  tier:3, parent:6},
+  {id:23, label:'Logistic Reg',      x:445,  y:65,   z:225,  tier:3, parent:6},
+  {id:24, label:'K-means',           x:-415, y:155,  z:55,   tier:3, parent:10},
+  {id:25, label:'DBSCAN',            x:-415, y:80,   z:-105, tier:3, parent:10},
+  {id:26, label:'Attention',         x:315,  y:-225, z:-375, tier:3, parent:19},
+  {id:27, label:'Fine-tuning',       x:390,  y:-305, z:-285, tier:3, parent:20},
+  {id:28, label:'ResNet',            x:-85,  y:395,  z:-315, tier:3, parent:16},
+  {id:29, label:'LSTM',              x:145,  y:375,  z:-315, tier:3, parent:17},
+];
+
+const EDGES = NODES.filter(n => n.parent !== null).map(n => ({ a: n.parent, b: n.id }));
+
+function project(n) {
+  const cx = Math.cos(rotX), sx = Math.sin(rotX);
+  const cy = Math.cos(rotY), sy = Math.sin(rotY);
+  const tx =  cy * n.x + sy * n.z;
+  const ty =  sx * (-sy * n.x + cy * n.z) + cx * n.y;
+  const tz =  cx * (-sy * n.x + cy * n.z) - sx * n.y;
+  const fov = 520 * zoom;
+  const sc  = fov / (fov + tz + 500);
+  return { sx: W/2 + tx*sc, sy: H/2 - ty*sc, sc, tz };
+}
+
+function nodeR(tier, sc) { return ([20,12,8,5][tier] || 5) * sc; }
+
+function getConnected(id) {
+  const s = new Set([id]);
+  EDGES.forEach(e => { if (e.a===id) s.add(e.b); if (e.b===id) s.add(e.a); });
+  return s;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  const pmap = {};
+  NODES.forEach(n => { pmap[n.id] = { ...n, ...project(n) }; });
+
+  const connSet = selectedId !== null ? getConnected(selectedId) : null;
+
+  const sorted = Object.values(pmap).sort((a,b) => a.tz - b.tz);
+
+  EDGES.forEach(e => {
+    const a = pmap[e.a], b = pmap[e.b];
+    const lit = connSet && connSet.has(e.a) && connSet.has(e.b);
+    const dim = connSet && !lit;
+
+    ctx.beginPath();
+    ctx.moveTo(a.sx, a.sy);
+    ctx.lineTo(b.sx, b.sy);
+
+    if (dim) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.4;
+    } else if (lit) {
+      const g = ctx.createLinearGradient(a.sx, a.sy, b.sx, b.sy);
+      g.addColorStop(0, C[a.tier].line + '0.9)');
+      g.addColorStop(1, C[b.tier].line + '0.9)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.6;
+    } else {
+      const depth = Math.max(0, Math.min(1, (a.tz + b.tz) / 1200 + 0.5));
+      ctx.strokeStyle = C[a.tier].line + (0.07 + depth * 0.15) + ')';
+      ctx.lineWidth = 0.6;
+    }
+    ctx.stroke();
+  });
+
+  sorted.forEach(n => {
+    const p = pmap[n.id];
+    const col = C[n.tier];
+    const r = nodeR(n.tier, p.sc);
+    const isSel  = selectedId === n.id;
+    const isConn = connSet && connSet.has(n.id);
+    const isDim  = connSet && !isConn;
+    const isHov  = hoverId === n.id;
+
+    if (isDim) {
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fill();
+      return;
+    }
+
+    const glowR = isSel ? r*4.5 : isConn ? r*3 : isHov ? r*3.5 : 0;
+    if (glowR > 0) {
+      const g = ctx.createRadialGradient(p.sx, p.sy, r*0.2, p.sx, p.sy, glowR);
+      g.addColorStop(0, col.glow + (isSel?'0.55)': '0.28)'));
+      g.addColorStop(1, col.glow + '0)');
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, glowR, 0, Math.PI*2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.sx, p.sy, r, 0, Math.PI*2);
+    ctx.fillStyle = col.fill;
+    ctx.globalAlpha = isDim ? 0.08 : isSel||isConn ? 1 : Math.max(0.35, 0.45 + p.tz/700);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if (isSel || isConn) {
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, r, 0, Math.PI*2);
+      ctx.strokeStyle = col.fill;
+      ctx.lineWidth = isSel ? 2 : 1;
+      ctx.stroke();
+    }
+
+    if (showLabels && p.sc > 0.42 && !isDim) {
+      const fs = Math.max(9, Math.min(13, nodeR(n.tier,1) * p.sc * 1.1));
+      ctx.font = `${n.tier <= 1 ? '500' : '400'} ${fs}px -apple-system,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const alpha = isSel||isConn ? 1 : Math.max(0.3, 0.35 + p.tz/800);
+      ctx.fillStyle = `rgba(210,225,255,${alpha})`;
+      const lines = n.label.split('\n');
+      const lh = fs + 2;
+      lines.forEach((l, i) => ctx.fillText(l, p.sx, p.sy + r + 4 + i*lh));
+    }
+  });
+}
+
+function hitTest(mx, my) {
+  let best = null, bestD = Infinity;
+  NODES.forEach(n => {
+    const p = project(n);
+    const r = nodeR(n.tier, p.sc) + 8;
+    const d = Math.hypot(p.sx - mx, p.sy - my);
+    if (d < r && d < bestD) { best = n; bestD = d; }
+  });
+  return best;
+}
+
+cv.addEventListener('mousemove', e => {
+  const rect = cv.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  if (dragging) {
+    rotY += (mx - lx) * 0.008;
+    rotX += (my - ly) * 0.008;
+    lx = mx; ly = my;
+    autoRot = false;
+    draw(); return;
+  }
+  const n = hitTest(mx, my);
+  hoverId = n ? n.id : null;
+  if (n) {
+    const conns = EDGES.filter(e => e.a===n.id || e.b===n.id).length;
+    tip.style.opacity = '1';
+    tip.style.left = (mx + 14) + 'px';
+    tip.style.top  = (my - 10) + 'px';
+    tip.innerHTML = `<strong style="color:#fff">${n.label.replace('\n',' ')}</strong> <span style="color:rgba(255,255,255,0.35);font-size:11px">${conns} links</span>`;
+    cv.style.cursor = 'pointer';
+  } else {
+    tip.style.opacity = '0';
+    cv.style.cursor = 'grab';
+  }
+  draw();
+});
+
+cv.addEventListener('mousedown', e => {
+  dragging = true;
+  const rect = cv.getBoundingClientRect();
+  lx = e.clientX - rect.left; ly = e.clientY - rect.top;
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+cv.addEventListener('click', e => {
+  const rect = cv.getBoundingClientRect();
+  const n = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+  if (n) {
+    if (selectedId === n.id) { selectedId = null; panel.classList.remove('show'); }
+    else {
+      selectedId = n.id;
+      exploreNode = n;
+      panName.textContent = n.label.replace('\n', ' ');
+      const conns = getConnected(n.id).size - 1;
+      const tiers = ['Core','Branch','Topic','Detail'];
+      panMeta.textContent = (tiers[n.tier]||'Node') + ' · ' + conns + ' connection' + (conns!==1?'s':'');
+      panel.classList.add('show');
+    }
+    autoRot = false;
+  } else {
+    selectedId = null;
+    panel.classList.remove('show');
+  }
+  draw();
+});
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoom = Math.max(0.3, Math.min(3.5, zoom - e.deltaY * 0.0008));
+  draw();
+}, { passive: false });
+
+cv.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { dragging=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; }
+}, { passive: true });
+cv.addEventListener('touchmove', e => {
+  if (dragging && e.touches.length===1) {
+    rotY += (e.touches[0].clientX - lx) * 0.008;
+    rotX += (e.touches[0].clientY - ly) * 0.008;
+    lx=e.touches[0].clientX; ly=e.touches[0].clientY;
+    autoRot=false; draw();
+  }
+}, { passive: true });
+cv.addEventListener('touchend', () => { dragging=false; });
+
+function resetView() { rotX=0.28; rotY=0.55; zoom=1; autoRot=true; selectedId=null; panel.classList.remove('show'); draw(); }
+function toggleRot() { autoRot=!autoRot; document.getElementById('rotBtn').textContent=autoRot?'Pause':'Rotate'; }
+function toggleLabels() { showLabels=!showLabels; draw(); }
+function exploreSelected() {
+  if (!exploreNode) return;
+  const children = NODES.filter(c => c.parent === exploreNode.id);
+  sendPrompt(`Tell me more about "${exploreNode.label.replace('\n',' ')}" in machine learning${children.length ? ' and its subtopics: '+children.map(c=>c.label.replace('\n',' ')).join(', '):''}`);
+}
+
+function animate() { if (autoRot && !dragging) { rotY += 0.003; draw(); } requestAnimationFrame(animate); }
+draw();
+animate();
+</script>
