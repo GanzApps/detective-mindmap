@@ -51,7 +51,7 @@ Phases:
 What to commit:
 
 ```bash
-node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" commit "docs: initialize [project-name] ([N] phases)" --files .planning/
+node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: initialize [project-name] ([N] phases)" --files .planning/
 ```
 
 </format>
@@ -133,7 +133,7 @@ SUMMARY: .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md
 What to commit:
 
 ```bash
-node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-PLAN.md .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md
+node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-PLAN.md .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md
 ```
 
 **Note:** Code files NOT included - already committed per-task.
@@ -153,7 +153,7 @@ Current: [task name]
 What to commit:
 
 ```bash
-node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" commit "wip: [phase-name] paused at task [X]/[Y]" --files .planning/
+node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" commit "wip: [phase-name] paused at task [X]/[Y]" --files .planning/
 ```
 
 </format>
@@ -229,14 +229,14 @@ Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 ## Why Per-Task Commits?
 
 **Context engineering for AI:**
-- Git history becomes primary context source for future the agent sessions
+- Git history becomes primary context source for future Claude sessions
 - `git log --grep="{phase}-{plan}"` shows all work for a plan
 - `git diff <hash>^..<hash>` shows exact changes per task
 - Less reliance on parsing SUMMARY.md = more context for actual work
 
 **Failure recovery:**
 - Task 1 committed ✅, Task 2 failed ❌
-- the agent in next session: sees task 1 complete, can retry task 2
+- Claude in next session: sees task 1 complete, can retry task 2
 - Can `git reset --hard` to last successful task
 
 **Debugging:**
@@ -245,9 +245,9 @@ Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 - Each commit is independently revertable
 
 **Observability:**
-- Solo developer + the agent workflow benefits from granular attribution
+- Solo developer + Claude workflow benefits from granular attribution
 - Atomic commits are git best practice
-- "Commit noise" irrelevant when consumer is the agent, not humans
+- "Commit noise" irrelevant when consumer is Claude, not humans
 
 </commit_strategy_rationale>
 
@@ -284,7 +284,7 @@ Set `commit_docs: false` so planning docs stay local and are not committed to an
 Instead of the standard `commit` command, use `commit-to-subrepo` when `sub_repos` is configured:
 
 ```bash
-node C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs commit-to-subrepo "feat(02-01): add user API" \
+node C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs commit-to-subrepo "feat(02-01): add user API" \
   --files backend/src/api/users.ts backend/src/types/user.ts frontend/src/components/UserForm.tsx
 ```
 

@@ -57,15 +57,15 @@ Configuration options for `.planning/` directory behavior.
 
 ```bash
 # Commit with automatic commit_docs + gitignore checks:
-node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" commit "docs: update state" --files .planning/STATE.md
+node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update state" --files .planning/STATE.md
 
 # Load config via state load (returns JSON):
-INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" state load)
+INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 # commit_docs is available in the JSON output
 
 # Or use init commands which include commit_docs:
-INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" init execute-phase "1")
+INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 # commit_docs is included in all init command outputs
 ```
@@ -75,7 +75,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 **Commit via CLI (handles checks automatically):**
 
 ```bash
-node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" commit "docs: update state" --files .planning/STATE.md
+node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update state" --files .planning/STATE.md
 ```
 
 The CLI checks `commit_docs` config and gitignore status internally — no manual conditionals needed.
@@ -163,14 +163,14 @@ To use uncommitted mode:
 
 Use `init execute-phase` which returns all config as JSON:
 ```bash
-INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" init execute-phase "1")
+INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" init execute-phase "1")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 # JSON output includes: branching_strategy, phase_branch_template, milestone_branch_template
 ```
 
 Or use `state load` for the config values:
 ```bash
-INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.codex/get-shit-done/bin/gsd-tools.cjs" state load)
+INIT=$(node "C:/workspace/ai-learn/3d graph mindmap/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 # Parse branching_strategy, phase_branch_template, milestone_branch_template from JSON
 ```
@@ -233,7 +233,7 @@ Generated from `CONFIG_DEFAULTS` (core.cjs) and `VALID_CONFIG_KEYS` (config.cjs)
 | `project_code` | string\|null | `null` | Any short string | Prefix for phase dirs (e.g., `"CK"` produces `CK-01-foundation`) |
 | `response_language` | string\|null | `null` | Any language name | Language for user-facing prompts (e.g., `"Portuguese"`, `"Japanese"`) |
 | `context_window` | number | `200000` | `200000`, `1000000` | Context window size; set `1000000` for 1M-context models |
-| `resolve_model_ids` | boolean\|string | `false` | `false`, `true`, `"omit"` | Map model aliases to full the agent IDs; `"omit"` returns empty string |
+| `resolve_model_ids` | boolean\|string | `false` | `false`, `true`, `"omit"` | Map model aliases to full Claude IDs; `"omit"` returns empty string |
 
 ### Workflow Fields
 
