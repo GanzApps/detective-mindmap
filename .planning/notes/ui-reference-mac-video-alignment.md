@@ -18,6 +18,7 @@ Capture the key UI, UX, and layout signals from the MAC reference video so futur
 - Representative frame: `.planning/references/mac-ui-reference/frame_0000.png`
 - Representative frame: `.planning/references/mac-ui-reference/frame_0300.png`
 - Representative frame: `.planning/references/mac-ui-reference/frame_0480.png`
+- Screenshot: `.planning/references/mac-ui-reference/graph-view-selected-filters.png`
 
 ## Key Screens Observed
 
@@ -30,6 +31,21 @@ Capture the key UI, UX, and layout signals from the MAC reference video so futur
 - Search and segmented filters in one horizontal control strip
 - Investigation cards arranged in a clean multi-column grid
 - Single strong CTA centered near the bottom of the content area
+
+### Workspace frame
+
+- Same calm shell language as the dashboard, but with the graph as the hero surface
+- Left-side utility panel, center graph canvas, right-side analysis panel
+- Persistent timeline strip and persistent AI command surface at the bottom
+- Minimap present in the lower-right of the graph area to show viewport/camera position
+
+### Left panel tab behavior
+
+- The left panel is explicitly tabbed
+- `Raw Evidence` is the navigation/data mode
+- `Filters & Layers` is the graph control mode
+- Only one tab is primary at a time; the active tab uses the accent underline/color treatment
+- This tab split is part of the information architecture and should be preserved in implementation
 
 ### Card interaction state
 

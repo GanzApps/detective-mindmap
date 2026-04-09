@@ -79,6 +79,10 @@ The graph remains the hero, but it sits inside a clean product frame.
 
 - `Raw Evidence`
 - `Filters & Layers`
+- Tabs should behave as distinct modes, not just visual sections in one long panel
+- The active tab should clearly indicate which mental model is in play:
+  - evidence browsing / navigation
+  - graph control / filtering
 
 ### Filters & Layers structure
 
@@ -92,6 +96,7 @@ The graph remains the hero, but it sits inside a clean product frame.
 - Connection layers should be controlled separately from entity types
 - Counts should be visible where useful for instant scope awareness
 - Time filtering should be available as explicit structured controls, not only through the timeline
+- Selected filter states should immediately affect graph visibility/emphasis while preserving overall orientation
 
 ## Right-Side Analysis Panel
 
@@ -101,11 +106,18 @@ The graph remains the hero, but it sits inside a clean product frame.
 - It should be used when:
   - a node is selected
   - an AI/chat command returns a relevant result
+- It should not behave as a permanently noisy always-on inspector
 
 ### Non-goal
 
 - Do not rely on floating center-canvas popup cards for primary detail display
 - The graph should remain visually unobstructed as much as possible
+
+### Selected-state behavior
+
+- Selected/focused network remains readable while the rest of the graph is dimmed
+- This dimming pattern should preserve context instead of fully hiding unrelated entities
+- The selected state shown in the reference is an important target for the revamp
 
 ### Panel role
 
@@ -158,3 +170,7 @@ The graph remains the hero, but it sits inside a clean product frame.
 
 - `.planning/notes/ui-reference-mac-video-alignment.md`
 - `.planning/notes/graph-ui-interaction-alignment.md`
+
+## Related Reference Assets
+
+- `.planning/references/mac-ui-reference/graph-view-selected-filters.png`
