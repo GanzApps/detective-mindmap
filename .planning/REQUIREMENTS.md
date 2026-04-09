@@ -1,117 +1,60 @@
 # Requirements: Detective Case Investigation Platform
 
-**Defined:** 2026-04-09
+**Defined:** 2026-04-10  
+**Milestone:** v2.0 Investigation Workspace Revamp  
 **Core Value:** A detective must be able to load a case, see all entities and their connections in an interactive graph, and switch between 2D and 3D views without losing context.
 
 ---
 
-## v1 Requirements
+## Milestone v2.0 Requirements
 
-### Data Foundation
+### Shell and Layout
 
-- [x] **DATA-01**: Shared typed interfaces for `GraphNode`, `GraphEdge`, `Case`, and `EvidenceFile` defined with Zod schemas; TypeScript types inferred
-- [x] **DATA-02**: Mock case data (at least 1 full case with 15+ entities, 20+ connections, categorized evidence files) that satisfies the shared types
-- [x] **DATA-03**: `caseRepository` interface (fetch case by ID, list cases) with mock implementation; swappable for real API without UI changes
-- [x] **DATA-04**: Case state persists to `localStorage` on change and restores on app load
+- [ ] **SHELL-06**: User can navigate a centered, reference-aligned dashboard shell with calm spacing, restrained surfaces, and a shared navigation/action pattern across case list and workspace views
+- [ ] **SHELL-07**: User can work inside a reference-aligned investigation workspace with a left utility panel, center graph canvas, right-side analysis panel, persistent timeline, and persistent command surface
+- [ ] **SHELL-08**: User can inspect selected-node or AI-result details in a right-side analysis panel that does not obscure the main graph canvas
+- [ ] **SHELL-09**: User can access quick command suggestions and a typed command field from a polished command surface integrated into the workspace shell
 
-### App Shell
+### Theme System
 
-- [x] **SHELL-01**: Case header bar shows case name, status badge, "Export Report" button, and "Actions" dropdown
-- [x] **SHELL-02**: Left sidebar lists evidence categories (e.g., iPhone dump, laptop dump, location scans) and individual files under each
-- [x] **SHELL-03**: Evidence file click highlights the corresponding entities in the graph
-- [x] **SHELL-04**: Entity/connection count displayed in the toolbar ("20 entities · 25 connections")
-- [x] **SHELL-05**: Status bar at the bottom shows timeline label and AI command bar placeholder input
+- [ ] **THEME-01**: User can switch between light and dark themes while preserving graph readability, panel hierarchy, and interaction clarity across dashboard and workspace surfaces
 
-### 3D Graph Mode
+### Search and Focus
 
-- [x] **GRAPH3D-01**: 3D mindmap rendered on Canvas with perspective projection (ported from `3d_mindmap_fixed.html`)
-- [x] **GRAPH3D-02**: Mouse drag rotates the 3D graph; scroll wheel zooms
-- [x] **GRAPH3D-03**: Node click highlights the selected node and its direct connections; dimmed everything else
-- [x] **GRAPH3D-04**: Hover tooltip shows node label and connection count
-- [x] **GRAPH3D-05**: Depth-based opacity and glow effects preserved from reference implementation
-- [x] **GRAPH3D-06**: Node detail panel (name, type, connection count, "Explore topic" action) shown on click
-- [x] **GRAPH3D-07**: "Reset view" and "Pause/Rotate" and "Labels" controls functional
-- [x] **GRAPH3D-08**: Animation loop correctly cleaned up on component unmount (no rAF leak)
-- [x] **GRAPH3D-09**: Canvas renders sharply at all DPR values (HiDPI / Retina)
+- [ ] **SEARCH-01**: User can search evidence and entities through a typeahead dropdown that shows matching results before any graph focus is applied
+- [ ] **SEARCH-02**: User can select a search result to focus the chosen node and its connected network while unrelated nodes and edges remain visible but dimmed
 
-### 2D Force Graph
+### Workspace Structure
 
-- [x] **GRAPH2D-01**: D3.js force simulation positions entities as nodes on Canvas
-- [x] **GRAPH2D-02**: Node color and icon encodes entity type (person, location, event, evidence, organization)
-- [x] **GRAPH2D-03**: Edges are labeled with relationship type (e.g., "witnessed", "located at", "owns")
-- [x] **GRAPH2D-04**: Dragging a node repositions it; simulation adjusts neighboring nodes
-- [x] **GRAPH2D-05**: Canvas panning (drag on empty space) and zoom (scroll wheel) with smooth limits
-- [x] **GRAPH2D-06**: "Zoom to fit" button resets viewport to show all nodes
-- [x] **GRAPH2D-07**: Node click selects it: highlights node + direct edges; dims everything else; shows NodeDetailPanel
-- [x] **GRAPH2D-08**: Clicking empty canvas deselects; restores all nodes to normal opacity
-- [x] **GRAPH2D-09**: Node search/filter: type a name to highlight matching nodes
-- [x] **GRAPH2D-10**: D3 simulation lifecycle correctly isolated from React rendering (simulation in `useRef`; no restart on non-data state changes)
+- [ ] **WS-07**: User can switch the left-side workspace panel between `Raw Evidence` and `Filters & Layers` modes through explicit tabs
+- [ ] **WS-08**: User can filter the graph through structured controls for entity types, connection layers, and time range from the `Filters & Layers` panel
+- [ ] **WS-09**: User can use a minimap or magnifier view to understand the current graph viewport or camera position while navigating the canvas
+- [ ] **WS-10**: User can keep node labels visible by default while edge labels remain selectively revealed to preserve readability
 
-### Graph Workspace (Shared)
+### Interaction Parity
 
-- [x] **WS-01**: Toggle button switches between 2D and 3D modes; selected node and graph data preserved across toggle
-- [x] **WS-02**: Both renderers mounted at page load; CSS `display:none` hides inactive renderer (not unmount)
-- [x] **WS-03**: NodeDetailPanel slides in on node select; shows label, entity type, relationship count, raw properties
-- [x] **WS-04**: NodeDetailPanel dismissed on deselect or Escape key
-- [x] **WS-05**: Filter panel: show/hide nodes by entity type (implemented as dimming in both 2D and 3D)
-- [x] **WS-06**: Layers panel: toggle edge label visibility, toggle node labels
+- [ ] **INTER-06**: User can drag a selected node to a desired position and have that manual placement preserved as shared workspace state across view switches
+- [ ] **INTER-07**: User can switch between 2D and 3D graph modes without losing the current selection, focus state, or investigation context
+- [ ] **INTER-08**: User can select a node in either renderer and see the same selected-network emphasis behavior in both views
 
-### Case Management
+### Graph Visual System
 
-- [x] **CASE-01**: User can create a new case (name, description, status)
-- [x] **CASE-02**: User can add an entity to a case (label, type, optional properties)
-- [x] **CASE-03**: User can draw a connection between two entities (relationship label, direction)
-- [x] **CASE-04**: User can delete an entity (removes it and all its edges)
-- [x] **CASE-05**: User can delete a connection
-- [x] **CASE-06**: Case list page shows all cases with name, entity count, last modified date
+- [ ] **GRAPH2D-11**: User can recognize entity types in the 2D graph through iconic node shapes, reference-aligned colors, and visible node labels
+- [ ] **GRAPH3D-10**: User can recognize the same entity types and focus states in the 3D graph through a visually aligned shape/color system adapted from the 2D graph
 
-### Export
+### AI Command Routing
 
-- [x] **EXPORT-01**: "Export Report" generates a PNG snapshot of the current graph canvas (current view, both 2D and 3D)
-- [x] **EXPORT-02**: "Export Report" generates a PDF including case metadata, entity list, connection summary, and graph snapshot
-- [x] **EXPORT-03**: Exported PNG is HiDPI quality (2x resolution)
-
-### Architecture & Quality
-
-- [x] **ARCH-01**: Graph math extracted to `lib/graph/` as pure functions (no React imports) with Jest unit tests
-- [x] **ARCH-02**: All graph components use `dynamic({ ssr: false })` - no SSR crashes
-- [x] **ARCH-03**: Zustand store manages global state (case data, selected node, active filters, view mode)
-- [x] **ARCH-04**: `caseRepository` interface - all data access goes through this abstraction
-- [x] **ARCH-05**: Component unit tests with React Testing Library for sidebar, header, NodeDetailPanel
+- [ ] **AI-01**: User can trigger known-intent commands from quick actions or typed input to perform predefined graph and workspace actions
+- [ ] **AI-02**: User can see AI command results routed into graph state changes and the right-side analysis panel instead of receiving detached text-only output
 
 ---
 
-## v2 Requirements
+## Future Requirements
 
-### Graph Interaction
-
-- **INTER-01**: Undo / redo for entity and connection edits (Ctrl+Z / Ctrl+Y)
-- **INTER-02**: Lasso select - drag to select multiple nodes; group-delete or group-move
-- **INTER-03**: Multi-select with Shift+click; move selected nodes as a group
-- **INTER-04**: Path finding - "Show connection between A and B" (BFS shortest path highlighted)
-- **INTER-05**: Layout algorithm selector (force, hierarchical, radial, circular)
-
-### Evidence
-
-- **EVID-01**: Evidence file preview in sidebar (image, PDF, text preview)
-- **EVID-02**: Evidence file upload (drag-and-drop to sidebar category)
-- **EVID-03**: Link an evidence file to a specific entity (shown in NodeDetailPanel)
-
-### Timeline
-
-- **TIME-01**: Timeline bar driven by entity timestamp properties (range slider -> graph highlights events in range)
-- **TIME-02**: Timeline -> graph sync: scrubbing timeline highlights nodes whose events fall in the visible window
-
-### Collaboration
-
-- **COLLAB-01**: Shareable case link (read-only snapshot URL)
-- **COLLAB-02**: Case version history (snapshot at each save)
-- **COLLAB-03**: Annotation / notes on nodes and edges (inline comment)
-
-### Backend
-
-- **BACK-01**: REST API integration - swap mock `caseRepository` for live API
-- **BACK-02**: Case data stored in server database (Postgres or Mongo)
+- **AI-03**: User can use freeform AI interpretation beyond known intents for multi-step investigation workflows
+- **BACK-01**: User can load and save cases through a live API-backed repository instead of mock-only data
+- **COLLAB-01**: User can share a read-only investigation snapshot with another teammate without screen-sharing
+- **INTER-09**: User can group-select or lasso-select multiple nodes for bulk investigation actions
 
 ---
 
@@ -119,13 +62,11 @@
 
 | Feature | Reason |
 |---------|--------|
-| Authentication / user accounts | No auth in v1; small team shares one instance; scope increases significantly |
-| Real-time collaboration (WebSockets) | Async sharing via export is sufficient; real-time adds significant infra complexity |
-| AI-generated connections | Auto-suggesting edges in an investigation context risks false positives - potentially harmful in legal contexts |
-| Geospatial / map view | Different rendering paradigm (Leaflet/Mapbox); major scope; defer to v3+ |
-| Mobile layout | Desktop-first; complex graph interactions (drag, multi-select, canvas pan) don't map well to touch |
-| Plugin marketplace | No external developer ecosystem at this stage |
-| Video evidence | Storage/bandwidth complexity; defer |
+| Authentication / user accounts | Small team shared-instance usage remains acceptable for this milestone |
+| Freeform LLM agent execution | v2.0 will use known intents and predefined safe triggers first |
+| Real-time collaboration | Async review via exports and future sharing remains sufficient for now |
+| Backend database migration | Workspace revamp should land before data-source replacement |
+| Mobile-first layout | Graph-heavy desktop interactions remain the primary target |
 
 ---
 
@@ -133,60 +74,29 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Satisfied (Phase 1) |
-| DATA-02 | Phase 1 | Satisfied (Phase 1) |
-| DATA-03 | Phase 1 | Satisfied (Phase 1) |
-| DATA-04 | Phase 6 | Satisfied (Phase 6) |
-| SHELL-01 | Phase 2 | Satisfied (Phase 2) |
-| SHELL-02 | Phase 2 | Satisfied (Phase 2) |
-| SHELL-03 | Phase 2 | Satisfied (Phase 2) |
-| SHELL-04 | Phase 2 | Satisfied (Phase 2) |
-| SHELL-05 | Phase 6 | Satisfied (Phase 6) |
-| GRAPH3D-01 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-02 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-03 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-04 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-05 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-06 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-07 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-08 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH3D-09 | Phase 3 | Satisfied (Phase 3) |
-| GRAPH2D-01 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-02 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-03 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-04 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-05 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-06 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-07 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-08 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-09 | Phase 4 | Satisfied (Phase 4) |
-| GRAPH2D-10 | Phase 4 | Satisfied (Phase 4) |
-| WS-01 | Phase 5 | Satisfied (Phase 5) |
-| WS-02 | Phase 5 | Satisfied (Phase 5) |
-| WS-03 | Phase 5 | Satisfied (Phase 5) |
-| WS-04 | Phase 5 | Satisfied (Phase 5) |
-| WS-05 | Phase 6 | Satisfied (Phase 6) |
-| WS-06 | Phase 6 | Satisfied (Phase 6) |
-| CASE-01 | Phase 2 | Satisfied (Phase 2) |
-| CASE-02 | Phase 2 | Satisfied (Phase 2) |
-| CASE-03 | Phase 2 | Satisfied (Phase 2) |
-| CASE-04 | Phase 2 | Satisfied (Phase 2) |
-| CASE-05 | Phase 2 | Satisfied (Phase 2) |
-| CASE-06 | Phase 2 | Satisfied (Phase 2) |
-| EXPORT-01 | Phase 7 | Satisfied (Phase 7) |
-| EXPORT-02 | Phase 7 | Satisfied (Phase 7) |
-| EXPORT-03 | Phase 7 | Satisfied (Phase 7) |
-| ARCH-01 | Phase 1 | Satisfied (Phase 1) |
-| ARCH-02 | Phase 2 | Satisfied (Phase 2) |
-| ARCH-03 | Phase 2 | Satisfied (Phase 2) |
-| ARCH-04 | Phase 1 | Satisfied (Phase 1) |
-| ARCH-05 | Phase 5 | Satisfied (Phase 5) |
+| SHELL-06 | Phase 8 | Planned |
+| SHELL-07 | Phase 9 | Planned |
+| SHELL-08 | Phase 9 | Planned |
+| SHELL-09 | Phase 12 | Planned |
+| THEME-01 | Phase 8 | Planned |
+| SEARCH-01 | Phase 10 | Planned |
+| SEARCH-02 | Phase 10 | Planned |
+| WS-07 | Phase 9 | Planned |
+| WS-08 | Phase 9 | Planned |
+| WS-09 | Phase 9 | Planned |
+| WS-10 | Phase 10 | Planned |
+| INTER-06 | Phase 11 | Planned |
+| INTER-07 | Phase 11 | Planned |
+| INTER-08 | Phase 11 | Planned |
+| GRAPH2D-11 | Phase 10 | Planned |
+| GRAPH3D-10 | Phase 10 | Planned |
+| AI-01 | Phase 12 | Planned |
+| AI-02 | Phase 12 | Planned |
 
 **Coverage:**
-- v1 requirements: 46 total
-- Mapped to phases: 46
+- v2.0 requirements: 18 total
+- Mapped to phases: 18
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-09*
-*Last updated: 2026-04-09 after Phase 7 completion*
+*Requirements defined: 2026-04-10*
