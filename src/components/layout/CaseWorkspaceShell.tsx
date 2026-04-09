@@ -84,7 +84,7 @@ export default function CaseWorkspaceShell({
   const selectedNodeLabel = selectedNode?.label ?? 'No active node';
 
   return (
-    <div className="mx-auto max-w-7xl space-y-shell-md">
+    <div className="mx-auto max-w-7xl space-y-6">
       <CaseHeader
         caseData={caseData}
         entityCount={caseData.graph.nodes.length}
@@ -99,20 +99,20 @@ export default function CaseWorkspaceShell({
         isExporting={isExporting}
       />
 
-      <div className="grid gap-shell-md lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <EvidenceSidebar
           evidence={caseData.evidence}
           selectedEvidenceId={highlightedEvidenceId}
           onEvidenceSelect={onSelectEvidence}
         />
 
-        <div className="space-y-shell-md">
+        <div className="space-y-6">
           <GraphWorkspace
             ref={graphWorkspaceRef}
             {...graphWorkspaceProps}
           />
 
-          <div className="space-y-shell-sm">
+          <div className="space-y-4">
             <TimelineBar
               caseData={caseData}
               activeEvidenceLabel={activeEvidenceLabel}
@@ -122,27 +122,26 @@ export default function CaseWorkspaceShell({
             <AICommandBar />
           </div>
 
-          <section className="grid gap-shell-md xl:grid-cols-2">
-            {/* Entities panel */}
-            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-sm">
-              <div className="mb-shell-md flex items-center justify-between">
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
+              <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-widest text-shell-text-muted">
+                  <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
                     Entities
                   </p>
-                  <h2 className="mt-1 text-lg font-semibold text-shell-text-primary">
+                  <h2 className="mt-2 text-xl font-semibold text-slate-50">
                     Graph Nodes
                   </h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowEntityModal(true)}
-                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-shell-md py-shell-sm text-sm font-semibold text-shell-accent transition hover:border-shell-accent"
+                  className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300"
                 >
                   Add entity
                 </button>
               </div>
-              <div className="space-y-shell-sm">
+              <div className="space-y-3">
                 {caseData.graph.nodes.map((node) => {
                   const isSelected = selectedNodeId === node.id;
                   const isHighlighted = highlightedEntityIds.includes(node.id);
@@ -150,29 +149,29 @@ export default function CaseWorkspaceShell({
                   return (
                     <div
                       key={node.id}
-                      className={`rounded-shell-lg border px-shell-md py-shell-sm transition ${
+                      className={`rounded-3xl border px-4 py-4 transition ${
                         isSelected
-                          ? 'border-shell-accent/40 bg-shell-accent-muted'
+                          ? 'border-cyan-400/40 bg-cyan-400/10'
                           : isHighlighted
                             ? 'border-amber-400/30 bg-amber-400/10'
-                            : 'border-shell-border bg-shell-surface-raised'
+                            : 'border-slate-800 bg-slate-950/70'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-shell-sm">
+                      <div className="flex items-start justify-between gap-4">
                         <button
                           type="button"
                           onClick={() => onSelectNode(isSelected ? null : node.id)}
                           className="text-left"
                         >
-                          <p className="text-sm font-semibold text-shell-text-primary">{node.label}</p>
-                          <p className="mt-1 text-xs uppercase tracking-widest text-shell-text-muted">
+                          <p className="text-sm font-semibold text-slate-50">{node.label}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                             {node.type} · {node.status}
                           </p>
                         </button>
                         <button
                           type="button"
                           onClick={() => setEntityToDelete(node.id)}
-                          className="rounded-shell-pill border border-shell-destructive/20 px-shell-sm py-1 text-xs uppercase tracking-widest text-shell-destructive transition hover:border-shell-destructive/60"
+                          className="rounded-full border border-rose-500/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-rose-200 transition hover:border-rose-400"
                         >
                           Delete
                         </button>
@@ -183,26 +182,25 @@ export default function CaseWorkspaceShell({
               </div>
             </div>
 
-            {/* Connections panel */}
-            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-sm">
-              <div className="mb-shell-md flex items-center justify-between">
+            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
+              <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-widest text-shell-text-muted">
+                  <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
                     Connections
                   </p>
-                  <h2 className="mt-1 text-lg font-semibold text-shell-text-primary">
+                  <h2 className="mt-2 text-xl font-semibold text-slate-50">
                     Relationship Edges
                   </h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowConnectionModal(true)}
-                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-shell-md py-shell-sm text-sm font-semibold text-shell-accent transition hover:border-shell-accent"
+                  className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300"
                 >
                   Add connection
                 </button>
               </div>
-              <div className="space-y-shell-sm">
+              <div className="space-y-3">
                 {caseData.graph.edges.map((edge) => {
                   const source = caseData.graph.nodes.find((node) => node.id === edge.source);
                   const target = caseData.graph.nodes.find((node) => node.id === edge.target);
@@ -210,21 +208,21 @@ export default function CaseWorkspaceShell({
                   return (
                     <div
                       key={edge.id}
-                      className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm"
+                      className="rounded-3xl border border-slate-800 bg-slate-950/70 px-4 py-4"
                     >
-                      <div className="flex items-start justify-between gap-shell-sm">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm font-semibold text-shell-text-primary">
+                          <p className="text-sm font-semibold text-slate-50">
                             {source?.label ?? edge.source} → {target?.label ?? edge.target}
                           </p>
-                          <p className="mt-1 text-xs uppercase tracking-widest text-shell-text-muted">
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                             {edge.label} · strength {edge.strength.toFixed(1)}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => setConnectionToDelete(edge.id)}
-                          className="rounded-shell-pill border border-shell-destructive/20 px-shell-sm py-1 text-xs uppercase tracking-widest text-shell-destructive transition hover:border-shell-destructive/60"
+                          className="rounded-full border border-rose-500/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-rose-200 transition hover:border-rose-400"
                         >
                           Delete
                         </button>

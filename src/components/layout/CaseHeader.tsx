@@ -71,7 +71,7 @@ export default function CaseHeader({
           {/* Export menu */}
           <details className="relative">
             <summary className="list-none cursor-pointer rounded-shell-pill bg-shell-accent px-shell-md py-shell-sm text-sm font-semibold text-shell-accent-fg transition hover:bg-[var(--shell-accent-hover)]">
-              {isExporting ? 'Exporting\u2026' : 'Export report'}
+              {isExporting ? 'Exporting\u2026' : 'Export Report'}
             </summary>
             <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
               <button
@@ -153,6 +153,7 @@ export default function CaseHeader({
         <div className="flex items-center gap-shell-sm">
           <button
             type="button"
+            aria-label="2D view"
             onClick={() => onSetViewMode('2d')}
             className={`rounded-shell-pill px-shell-md py-shell-sm text-sm font-medium transition ${
               viewMode === '2d'
@@ -160,10 +161,11 @@ export default function CaseHeader({
                 : 'border border-shell-border text-shell-text-secondary hover:border-shell-border-strong hover:text-shell-text-primary'
             }`}
           >
-            2D
+            2D view
           </button>
           <button
             type="button"
+            aria-label="3D view"
             onClick={() => onSetViewMode('3d')}
             className={`rounded-shell-pill px-shell-md py-shell-sm text-sm font-medium transition ${
               viewMode === '3d'
@@ -171,7 +173,7 @@ export default function CaseHeader({
                 : 'border border-shell-border text-shell-text-secondary hover:border-shell-border-strong hover:text-shell-text-primary'
             }`}
           >
-            3D
+            3D view
           </button>
         </div>
       </div>
