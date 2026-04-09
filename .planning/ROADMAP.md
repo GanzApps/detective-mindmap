@@ -2,124 +2,182 @@
 
 ## Overview
 
-Milestone `v2.0` focuses on an investigation workspace revamp rather than a net-new product surface. The work starts by establishing a shared design-token and layout foundation so the dashboard and workspace align with the saved references in light and dark themes. Once the shell is stable, the workspace frame is rebuilt around a left tabbed utility panel, a right on-canvas analysis panel, and a persistent minimap/timeline/command structure. The graph then receives a new visual language and search-to-focus flow, followed by true 2D/3D interaction parity so both renderers behave like alternate views into the same investigation state. The milestone finishes with known-intent AI command routing and final integration polish across the shell and graph.
+Seven phases deliver a fully interactive investigation board: a typed data foundation comes first so every downstream component builds on a stable, swappable contract; the Next.js shell and case management CRUD follow to give the app its navigable structure; the 3D Canvas renderer is ported next while the vanilla source is freshest and its pure math extracted for isolated testing; the D3.js 2D force graph builds on those same pure-function foundations; both renderers are then wired together with a CSS-toggle workspace and shared selection state; controls, filters, timeline, and localStorage persistence complete the interactive surface; and finally export rounds out the v1 feature set.
 
 ## Phases
 
 **Phase Numbering:**
-- Integer phases continue milestone work in sequence
-- Existing milestone `v1.0` completed at Phase `7`
-- Milestone `v2.0` continues from Phase `8`
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 8: Design Tokens + Shell Alignment** - shared layout system, calm shell framing, and light/dark theme foundation
-- [ ] **Phase 9: Workspace Frame + Panels** - left tabbed utility panel, right analysis panel, minimap, and persistent workspace bands
-- [ ] **Phase 10: Graph Visual Language + Search Focus** - iconic node system, calmer color palette, default information density, and typeahead-first focus flow
-- [ ] **Phase 11: 2D / 3D Interaction Parity** - shared selection, focus, and manual placement behavior across both renderers
-- [ ] **Phase 12: AI Command Routing + Workspace Polish** - known-intent command triggers, result routing, and final workspace integration polish
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [x] **Phase 1: Foundation** - Shared Zod schemas, TypeScript types, mock data, and caseRepository interface
+- [x] **Phase 2: App Shell** - Next.js layout, case header, evidence sidebar, Zustand store, and case management CRUD
+- [x] **Phase 3: 3D Renderer Port** - Pure projection/hit-test functions extracted first, then MindMap3D Canvas component
+- [x] **Phase 4: 2D Force Graph** - D3 simulation in useRef, Canvas draw, pan/zoom/drag, node selection
+- [x] **Phase 5: GraphWorkspace + Toggle** - CSS display:none toggle connecting both renderers, NodeDetailPanel, component tests
+- [x] **Phase 6: Controls + Filters + Timeline + Persistence** - FilterPanel, Layers, TimelineBar, AICommandBar placeholder, localStorage
+- [x] **Phase 7: Export** - PNG snapshot and PDF report via canvas-first export with html2canvas + jsPDF support
 
 ## Phase Details
 
-### Phase 8: Design Tokens + Shell Alignment
-**Goal**: Dashboard and workspace surfaces share a centered, reference-aligned shell and a consistent light/dark design token system.
-**Depends on**: Completed Phase 7
-**Requirements**: SHELL-06, THEME-01
+### Phase 1: Foundation
+**Goal**: All shared types, Zod schemas, mock case data, and the caseRepository interface exist and are importable by every downstream phase.
+**Depends on**: Nothing (first phase)
+**Requirements**: DATA-01, DATA-02, DATA-03, ARCH-01, ARCH-04
 **Success Criteria** (what must be TRUE):
-  1. Dashboard and workspace screens use the same restrained container, spacing rhythm, and action/header language
-  2. Light and dark themes can be toggled without breaking graph readability or panel hierarchy
-  3. Core shell components draw from shared tokens instead of one-off styling
-**Plans**: 3 plans
+  1. `GraphNode`, `GraphEdge`, `Case`, and `EvidenceFile` TypeScript types are inferred from Zod schemas and pass `tsc --noEmit` with zero errors
+  2. Mock case data contains at least 1 complete case with 15+ entities and 20+ connections that satisfies all Zod schemas at runtime
+  3. `caseRepository.fetchCase(id)` and `caseRepository.listCases()` return typed data from the mock implementation
+  4. Pure graph utility functions in `lib/graph/` (`getConnectedIds`, `buildGraphFromCase`) have passing Jest unit tests with no DOM dependency
+**Plans**: 5 plans
+**Research needed**: No
+
+Plans:
+- [x] 01-01-PLAN.md Ã¢â‚¬â€ Scaffold Next.js project, install dependencies (zod, zustand, jest, ts-jest), configure tsconfig strict mode and jest.config.ts with ts-jest node environment
+- [x] 01-02-PLAN.md Ã¢â‚¬â€ Create `src/lib/graph/graphTypes.ts` with all Zod schemas, TypeScript types, ENTITY_TYPE_COLOR const, getConnectedIds, and buildGraphFromCase
+- [x] 01-03-PLAN.md Ã¢â‚¬â€ Create `src/lib/data/dataTypes.ts` (Case, EvidenceFile, EvidenceCategory schemas) and `src/lib/data/mockCases.ts` (Operation Nightfall, 17 nodes, 25 edges, Zod-validated at import)
+- [x] 01-04-PLAN.md Ã¢â‚¬â€ Create `src/lib/data/caseRepository.ts` with CaseRepository interface and mockCaseRepository backed by mockCases.ts
+- [x] 01-05-PLAN.md Ã¢â‚¬â€ Write Jest unit tests for getConnectedIds, buildGraphFromCase, and Zod schema validation; confirm node test environment with zero DOM imports
+
+### Phase 2: App Shell
+**Goal**: The Next.js application is navigable with a case workspace page, fully wired case header, evidence sidebar, Zustand global store, and working case management CRUD.
+**Depends on**: Phase 1
+**Requirements**: SHELL-01, SHELL-02, SHELL-03, SHELL-04, CASE-01, CASE-02, CASE-03, CASE-04, CASE-05, CASE-06, ARCH-02, ARCH-03
+**Success Criteria** (what must be TRUE):
+  1. Visiting `/cases` shows a list of cases with name, entity count, and last modified date
+  2. Visiting `/cases/[id]` shows the case header (name, status badge, Export Report button, Actions dropdown) and evidence sidebar with category tree and file list
+  3. Clicking an evidence file in the sidebar triggers a visual highlight callback (entity highlight integration deferred to Phase 5, but the callback is wired)
+  4. Entity and connection counts display correctly in the toolbar
+  5. User can create a case, add entities, draw connections, delete entities and connections Ã¢â‚¬â€ all mutations update Zustand store and are reflected in the UI without page reload
+  6. All graph area components are wrapped in `dynamic({ ssr: false })` Ã¢â‚¬â€ the app builds without SSR errors
+**Plans**: 5 plans
 **Research needed**: No
 **UI hint**: yes
 
 Plans:
-- [ ] 08-01-PLAN.md - Define shared color, spacing, radius, elevation, and typography tokens for light and dark themes
-- [ ] 08-02-PLAN.md - Refactor dashboard and workspace shell containers, top navigation, and action areas to match the reference framing
-- [ ] 08-03-PLAN.md - Apply theme-aware shell styling and verify consistency across case list and workspace entry points
+- [x] 02-01: Scaffold Next.js App Router project Ã¢â‚¬â€ `app/page.tsx` redirect, `app/cases/page.tsx` case list, `app/cases/[caseId]/page.tsx` workspace shell; configure Tailwind dark theme; establish `dynamic({ ssr: false })` pattern on a graph placeholder before any D3 code
+- [x] 02-02: Implement Zustand store (`store/caseStore.ts`) Ã¢â‚¬â€ slices for case data, selected node ID, active filters, view mode ('2d' | '3d'); wire `useCaseData` hook to load from `caseRepository`
+- [x] 02-03: Build `CaseHeader` component Ã¢â‚¬â€ case name, status badge, Export Report button (no-op), Actions dropdown; build `EvidenceSidebar` with category tree and file list; wire evidence file click to store
+- [x] 02-04: Build case management CRUD UI Ã¢â‚¬â€ create case form, add entity form, draw connection form, delete entity/connection actions; all mutations go through Zustand store actions
+- [x] 02-05: Build `CaseListPage` with entity count and last modified; add `SHELL-04` entity/connection count display in toolbar area; end-to-end smoke test: create case Ã¢â€ â€™ add entity Ã¢â€ â€™ view in list
 
-### Phase 9: Workspace Frame + Panels
-**Goal**: The workspace is reorganized into a left tabbed utility panel, center graph canvas, right-side analysis panel, minimap, persistent timeline, and integrated command surface.
-**Depends on**: Phase 8
-**Requirements**: SHELL-07, SHELL-08, WS-07, WS-08, WS-09
+### Phase 3: 3D Renderer Port
+**Goal**: The 3D mindmap from `3d_mindmap_fixed.html` runs as a React Canvas component with all interactions preserved, no animation loop leaks, sharp HiDPI rendering, and pure math functions independently tested.
+**Depends on**: Phase 1
+**Requirements**: GRAPH3D-01, GRAPH3D-02, GRAPH3D-03, GRAPH3D-04, GRAPH3D-05, GRAPH3D-06, GRAPH3D-07, GRAPH3D-08, GRAPH3D-09
 **Success Criteria** (what must be TRUE):
-  1. The left panel cleanly switches between `Raw Evidence` and `Filters & Layers` modes
-  2. Filters and layers are organized into entity types, connection layers, and time range controls
-  3. The right-side analysis panel appears without obscuring the graph and can represent selected-state or AI-result content
-  4. A minimap or magnifier indicates the current graph viewport/camera position
-  5. Timeline and command surfaces remain persistent within the workspace frame
+  1. The 3D Canvas renders the mock case graph with depth-based opacity and glow effects matching the reference implementation
+  2. Dragging the canvas rotates the graph; scroll wheel zooms; the camera state does not trigger React re-renders
+  3. Clicking a node highlights it and its direct connections; all other nodes dim; NodeDetailPanel stub receives the selected node ID
+  4. A hover tooltip shows the node label and connection count
+  5. Reset view, Pause/Resume rotation, and Labels toggle controls work correctly
+  6. The component unmounts cleanly Ã¢â‚¬â€ no requestAnimationFrame leaks verified by React Strict Mode double-invocation
+  7. On a Retina display, node edges are sharp (no blurring) and click hit zones match drawn node positions
+**Plans**: 5 plans
+**Research needed**: No
+
+Plans:
+- [x] 03-01: Extract pure functions from `3d_mindmap_fixed.html` into `lib/graph/` Ã¢â‚¬â€ `projection3d.ts` (`projectNode`), `hitTest.ts` (`hitTest3D`), `graphLayout.ts` (`getConnectedIds` Ã¢â‚¬â€ shared with Phase 1); write Jest tests for each with known inputs; zero DOM imports
+- [x] 03-02: Extract stateless render function Ã¢â‚¬â€ `lib/graph/renderer3d.ts` (`drawFrame3D`); wrap every per-node draw call in `ctx.save()/ctx.restore()` to eliminate the `globalAlpha` leak from the reference source; preserve depth-sort, glow, and opacity logic
+- [x] 03-03: Build `MindMap3D` component skeleton Ã¢â‚¬â€ `canvasRef`, camera state in `useRef` (rotX, rotY, zoom), `dragging` ref, `hoverId` ref, `autoRot` ref, `rafId` ref; implement `ResizeObserver` in `useEffect` with `dpr` scaling via `ctx.setTransform`; add `cancelAnimationFrame` cleanup and `running` boolean guard for Strict Mode
+- [x] 03-04: Wire animation loop, mouse handlers, and `hitTest3D` into `MindMap3D`; connect Reset/Pause/Labels control props; implement hover tooltip via portal; verify no `setState` calls occur during drag or animation frames
+- [x] 03-05: Mark `MindMap3D` as `'use client'`; wrap import in `dynamic({ ssr: false })` at page level; run `next build` and confirm zero SSR errors; manual Retina DPR test and strict mode leak test
+
+### Phase 4: 2D Force Graph
+**Goal**: The D3.js force graph renders all case entities on Canvas with drag, pan, zoom, node selection, and edge labels Ã¢â‚¬â€ with simulation lifecycle fully isolated from React rendering.
+**Depends on**: Phase 1
+**Requirements**: GRAPH2D-01, GRAPH2D-02, GRAPH2D-03, GRAPH2D-04, GRAPH2D-05, GRAPH2D-06, GRAPH2D-07, GRAPH2D-08, GRAPH2D-09, GRAPH2D-10
+**Success Criteria** (what must be TRUE):
+  1. All mock case entities appear as labeled, color-coded nodes (by entity type) on the Canvas with visible edge relationship labels
+  2. Dragging a node repositions it and the simulation adjusts neighbors; drag releases node back to simulation without position jump
+  3. Panning (drag on empty space) and zooming (scroll wheel) work with smooth limits; Zoom to Fit resets the viewport
+  4. Clicking a node highlights it and its direct edges, dims everything else, and emits the selected node ID upward; clicking empty canvas deselects
+  5. Typing in the node search input highlights matching nodes without restarting the simulation
+  6. Simulation does not restart when filter state, selection, or UI state changes Ã¢â‚¬â€ only when node/edge data changes
+**Plans**: 5 plans
+**Research needed**: Yes (D3 Canvas drag edge cases Ã¢â‚¬â€ consult PITFALLS.md Pitfall 11 before implementation)
+**UI hint**: yes
+
+Plans:
+- [x] 04-01: Implement `lib/graph/forceSimulation.ts` Ã¢â‚¬â€ `createForceSimulation(nodes, edges)` pure setup function; `drawGraph2D(ctx, w, h, nodes, edges, selectedId, transform)` pure draw function with entity-type color/icon encoding and edge labels; `hitTest2D(nodes, mx, my, transform)` pure hit test; Jest tests for all three
+- [x] 04-02: Build `ForceGraph2D` component skeleton Ã¢â‚¬â€ `canvasRef`, `simulationRef` in `useRef`; `useEffect([nodes, edges])` creates simulation via `createForceSimulation`, ticks call `drawGraph2D`, cleanup calls `sim.stop()`; second `useEffect([selectedId])` redraws without restarting simulation; parent wraps `nodes`/`edges` in `useMemo`
+- [x] 04-03: Implement pan/zoom state Ã¢â‚¬â€ `transformRef` for current `d3.ZoomTransform`; wire `d3.zoom()` to canvas via `useEffect`; implement Zoom to Fit; pass transform into `drawGraph2D` and `hitTest2D`
+- [x] 04-04: Implement node drag Ã¢â‚¬â€ `d3.drag()` with `.filter(e => !e.button)` and 5px threshold to distinguish click from drag; `dragstart` sets `fx/fy`, `dragend` releases; drag does not restart simulation from zero alpha; attach through D3 not React synthetic events
+- [x] 04-05: Implement node search/filter input Ã¢â‚¬â€ controlled React input in parent; pass `highlightIds` set down to `drawGraph2D`; confirm simulation does not restart on search input changes; wrap in `dynamic({ ssr: false })`
+
+### Phase 5: GraphWorkspace + Toggle
+**Goal**: Both renderers are connected under a single `GraphWorkspace` component with a CSS display:none toggle, shared selection state, a functioning NodeDetailPanel, and component-level tests.
+**Depends on**: Phase 3, Phase 4
+**Requirements**: WS-01, WS-02, WS-03, WS-04, ARCH-05
+**Success Criteria** (what must be TRUE):
+  1. The 2D/3D toggle button switches the visible renderer; the graph data and selected node are identical in both modes
+  2. Toggling from 2D to 3D and back preserves custom node positions dragged in 2D (D3 `x/y` mutations are not lost)
+  3. Clicking a node in either renderer opens NodeDetailPanel showing the node label, entity type, relationship count, and raw properties
+  4. NodeDetailPanel closes on deselect, on clicking empty canvas, and on pressing Escape
+  5. CaseHeader, EvidenceSidebar, and NodeDetailPanel all pass React Testing Library component tests
+**Plans**: 5 plans
+**Research needed**: No
+**UI hint**: yes
+
+Plans:
+- [x] 05-01: Build `GraphWorkspace` component Ã¢â‚¬â€ owns `viewMode` state ('2d' | '3d') and the toggle button; mounts BOTH `ForceGraph2D` and `MindMap3D` at page load; CSS `style={{ display: viewMode === '2d' ? 'block' : 'none' }}` on each wrapper div Ã¢â‚¬â€ never unmount; confirm both Canvas elements exist in DOM during toggle via React DevTools
+- [x] 05-02: Wire shared `selectedNodeId` Ã¢â‚¬â€ lives in Zustand store or `page.tsx`; passed to both renderers as a prop; both renderers call the same `onNodeSelect(id)` callback; verify selection state persists across toggle
+- [x] 05-03: Build `NodeDetailPanel` Ã¢â‚¬â€ slide-in panel showing label, entity type, relationship count, raw properties; receives `selectedNode` and `connections[]` from store; dismisses on `onDeselect` prop call or Escape keydown listener
+- [x] 05-04: Wire evidence sidebar click to highlight entities in the active renderer Ã¢â‚¬â€ `SHELL-03` now fully implemented; confirm highlighted node IDs flow into `ForceGraph2D` `highlightIds` and `MindMap3D` `highlightIds`
+- [x] 05-05: Write React Testing Library tests Ã¢â‚¬â€ `CaseHeader` renders name and status badge; `EvidenceSidebar` renders category tree; `NodeDetailPanel` shows correct label and dismisses on Escape; mock canvas and D3 where needed
+
+### Phase 6: Controls + Filters + Timeline + Persistence
+**Goal**: FilterPanel, Layers toggle, TimelineBar, AICommandBar placeholder, and localStorage persistence are all wired into the live application.
+**Depends on**: Phase 5
+**Requirements**: WS-05, WS-06, SHELL-05, DATA-04
+**Success Criteria** (what must be TRUE):
+  1. Toggling entity type filters in FilterPanel shows/hides matching nodes in both the 2D and 3D renderers without restarting the D3 simulation
+  2. The Layers panel toggles edge label visibility and node label visibility across both renderers
+  3. The TimelineBar renders at the bottom with the AI command bar placeholder input
+  4. Case state (entities, connections, selected node) survives a page reload Ã¢â‚¬â€ localStorage restores the full case state on app load
 **Plans**: 4 plans
 **Research needed**: No
 **UI hint**: yes
 
 Plans:
-- [ ] 09-01-PLAN.md - Rebuild the left workspace rail with tab state, search placement, and the `Raw Evidence` / `Filters & Layers` split
-- [ ] 09-02-PLAN.md - Implement structured entity, layer, and time-range controls in the filter panel
-- [ ] 09-03-PLAN.md - Replace the existing floating detail surface with a right-side on-canvas analysis panel
-- [ ] 09-04-PLAN.md - Add a minimap and integrate persistent timeline/command bands into the new frame
+- [x] 06-01: Build `FilterPanel` and shared filter/layer state in Zustand so `GraphWorkspace` owns graph-level controls
+- [x] 06-02: Wire dimming-based filters plus shared node/edge label and focus-neighborhood toggles into both renderers without recreating simulation/camera state
+- [x] 06-03: Build `TimelineBar` and `AICommandBar` footer surfaces and integrate them directly beneath the graph workspace
+- [x] 06-04: Persist practical case/workspace state with Zustand middleware and cover controls, footer surfaces, and rehydration with Jest/RTL
 
-### Phase 10: Graph Visual Language + Search Focus
-**Goal**: The graph adopts an iconic entity-type visual system and a typeahead-first search flow that focuses a selected network while preserving overall context.
-**Depends on**: Phase 9
-**Requirements**: SEARCH-01, SEARCH-02, WS-10, GRAPH2D-11, GRAPH3D-10
+### Phase 7: Export
+**Goal**: The Export Report flow produces a HiDPI PNG snapshot of the active graph view and a PDF report including case metadata, entity list, connection summary, and the graph snapshot.
+**Depends on**: Phase 6
+**Requirements**: EXPORT-01, EXPORT-02, EXPORT-03
 **Success Criteria** (what must be TRUE):
-  1. Entity types are recognizable through shape and color in both 2D and 3D
-  2. Node labels are visible by default while edge labels remain selectively revealed to avoid overload
-  3. Typing in search shows dropdown results before any graph state changes
-  4. Choosing a result emphasizes the selected node and its connected network while unrelated nodes remain visible but dimmed
+  1. The header export menu can download a PNG of the currently active renderer without resetting view state
+  2. The same menu can download a PDF containing case metadata, workspace context, entity list, connection summary, and the graph snapshot
+  3. Export uses the active renderer canvas as the primary image source and keeps a scale-2 DOM capture fallback available
 **Plans**: 4 plans
-**Research needed**: No
+**Research needed**: Completed during planning/execution
 **UI hint**: yes
 
 Plans:
-- [ ] 10-01-PLAN.md - Define the entity-type shape and color language and apply it to the 2D renderer
-- [ ] 10-02-PLAN.md - Adapt the same visual language to the 3D renderer without losing legibility
-- [ ] 10-03-PLAN.md - Rework search into a typeahead-first selector and introduce selected-network focus behavior
-- [ ] 10-04-PLAN.md - Tune default information density, label visibility, and selected/dimmed states for readability
-
-### Phase 11: 2D / 3D Interaction Parity
-**Goal**: 2D and 3D views behave like alternate perspectives of the same investigation state, with aligned selection, focus, and manual placement behavior.
-**Depends on**: Phase 10
-**Requirements**: INTER-06, INTER-07, INTER-08
-**Success Criteria** (what must be TRUE):
-  1. Selection and focus behavior match across 2D and 3D
-  2. Switching views preserves the user’s active context instead of feeling like a reset into a different tool
-  3. Manual node repositioning is respected as shared workspace state across renderer switches
-**Plans**: 3 plans
-**Research needed**: No
-**UI hint**: yes
-
-Plans:
-- [ ] 11-01-PLAN.md - Introduce shared workspace state for selected-network focus and renderer-independent interaction parity
-- [ ] 11-02-PLAN.md - Implement shared manual placement behavior for draggable nodes across view switches
-- [ ] 11-03-PLAN.md - Verify parity details for selection, dimming, search focus, and view switching across both renderers
-
-### Phase 12: AI Command Routing + Workspace Polish
-**Goal**: The AI command surface becomes a known-intent orchestration layer that triggers predefined graph/workspace functions and routes meaningful results into the analysis panel.
-**Depends on**: Phase 11
-**Requirements**: SHELL-09, AI-01, AI-02
-**Success Criteria** (what must be TRUE):
-  1. The command surface presents quick command chips and typed input in a polished shell-integrated UI
-  2. Supported known intents map to predefined graph/workspace actions instead of detached text-only output
-  3. AI-triggered results can update graph state and populate the right-side analysis panel
-  4. Final workspace polish aligns command behavior, panel updates, and shell presentation with the saved references
-**Plans**: 4 plans
-**Research needed**: No
-**UI hint**: yes
-
-Plans:
-- [ ] 12-01-PLAN.md - Rebuild the command surface with quick intent chips and polished input/action states
-- [ ] 12-02-PLAN.md - Implement the known-intent routing layer for safe predefined graph/workspace triggers
-- [ ] 12-03-PLAN.md - Route command outcomes into graph state changes and the right-side analysis panel
-- [ ] 12-04-PLAN.md - Run end-to-end workspace polish and verification for the revamp milestone
+- [x] 07-01: Added renderer export handles and a shared active-export seam in GraphWorkspace
+- [x] 07-02: Implemented src/lib/export/reportExporter.ts with canvas-first PNG export, html2canvas fallback, and detailed jsPDF report generation
+- [x] 07-03: Replaced the static header export button with a compact PNG / PDF / both menu and wired page-level export orchestration
+- [x] 07-04: Added focused export tests, ran the full Jest suite, and verified a successful production build
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 8 -> 9 -> 10 -> 11 -> 12
+Phases execute in numeric order: 1 Ã¢â€ â€™ 2 Ã¢â€ â€™ 3 Ã¢â€ â€™ 4 Ã¢â€ â€™ 5 Ã¢â€ â€™ 6 Ã¢â€ â€™ 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 8. Design Tokens + Shell Alignment | 0/3 | Planned | - |
-| 9. Workspace Frame + Panels | 0/4 | Planned | - |
-| 10. Graph Visual Language + Search Focus | 0/4 | Planned | - |
-| 11. 2D / 3D Interaction Parity | 0/3 | Planned | - |
-| 12. AI Command Routing + Workspace Polish | 0/4 | Planned | - |
+| 1. Foundation | 5/5 | Complete | 2026-04-09 |
+| 2. App Shell | 5/5 | Complete | 2026-04-09 |
+| 3. 3D Renderer Port | 5/5 | Complete | 2026-04-09 |
+| 4. 2D Force Graph | 5/5 | Complete | 2026-04-09 |
+| 5. GraphWorkspace + Toggle | 5/5 | Complete | 2026-04-09 |
+| 6. Controls + Filters + Timeline + Persistence | 4/4 | Complete | 2026-04-09 |
+| 7. Export | 4/4 | Complete | 2026-04-09 |
+
+

@@ -1,1 +1,133 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   Shell Design Tokens
+   --------------------------------------------------------------------------
+   Centralized CSS custom properties for the investigation workspace shell.
+   Shell tokens cover layout surfaces, text hierarchy, borders, accent, and
+   elevation. Graph/entity semantic colors are NOT defined here — they live
+   in graph-specific stylesheets so shell and graph systems remain distinct.
+   ========================================================================== */
+
+/* --- Light theme (default) --- */
+:root,
+[data-theme="light"] {
+  /* Backgrounds */
+  --shell-bg:              #f8fafc;   /* page background, 60% dominant */
+  --shell-surface:         #ffffff;   /* cards, rails, elevated panels */
+  --shell-surface-raised:  #f1f5f9;   /* hover surfaces, nested containers */
+  --shell-surface-overlay: #e2e8f0;   /* overlays, dropdowns */
+
+  /* Text hierarchy */
+  --shell-text-primary:    #0f172a;   /* headings, primary labels */
+  --shell-text-secondary:  #475569;   /* secondary labels, metadata */
+  --shell-text-muted:      #94a3b8;   /* placeholder, disabled, hints */
+  --shell-text-inverse:    #f8fafc;   /* text on dark/accent surfaces */
+
+  /* Borders */
+  --shell-border:          #e2e8f0;   /* default borders, dividers */
+  --shell-border-strong:   #cbd5e1;   /* prominent separators */
+  --shell-border-focus:    #7c3aed;   /* keyboard focus ring */
+
+  /* Accent — purple, 10% surface usage */
+  --shell-accent:          #7c3aed;   /* primary CTA, active tabs, command focus */
+  --shell-accent-hover:    #6d28d9;   /* accent hover state */
+  --shell-accent-muted:    #ede9fe;   /* accent-tinted background chips/tags */
+  --shell-accent-fg:       #ffffff;   /* foreground on accent fill */
+
+  /* Semantic: Destructive */
+  --shell-destructive:     #ef4444;   /* destructive actions, error states */
+  --shell-destructive-bg:  #fef2f2;   /* destructive state background tint */
+
+  /* Elevation shadows */
+  --shell-shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shell-shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -1px rgb(0 0 0 / 0.04);
+  --shell-shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -2px rgb(0 0 0 / 0.04);
+
+  /* Spacing scale (multiples of 4) */
+  --shell-space-xs:  4px;
+  --shell-space-sm:  8px;
+  --shell-space-md:  16px;
+  --shell-space-lg:  24px;
+  --shell-space-xl:  32px;
+  --shell-space-2xl: 48px;
+  --shell-space-3xl: 64px;
+
+  /* Border radius */
+  --shell-radius-sm: 4px;
+  --shell-radius-md: 8px;
+  --shell-radius-lg: 12px;
+  --shell-radius-xl: 16px;
+  --shell-radius-pill: 9999px;
+
+  /* Typography scale */
+  --shell-text-body:    14px;
+  --shell-text-label:   12px;
+  --shell-text-heading: 24px;
+  --shell-text-display: 36px;
+
+  /* Shell band dimensions */
+  --shell-header-h:   56px;
+  --shell-footer-h:   40px;
+  --shell-sidebar-w:  260px;
+}
+
+/* --- Dark theme --- */
+[data-theme="dark"] {
+  /* Backgrounds — restrained, not neon */
+  --shell-bg:              #0f172a;   /* page background */
+  --shell-surface:         #111827;   /* cards, rails, elevated panels */
+  --shell-surface-raised:  #1e293b;   /* hover surfaces, nested containers */
+  --shell-surface-overlay: #334155;   /* overlays, dropdowns */
+
+  /* Text hierarchy */
+  --shell-text-primary:    #f1f5f9;
+  --shell-text-secondary:  #94a3b8;
+  --shell-text-muted:      #475569;
+  --shell-text-inverse:    #0f172a;
+
+  /* Borders */
+  --shell-border:          #1e293b;
+  --shell-border-strong:   #334155;
+  --shell-border-focus:    #7c3aed;
+
+  /* Accent — purple stays consistent across themes */
+  --shell-accent:          #7c3aed;
+  --shell-accent-hover:    #8b5cf6;
+  --shell-accent-muted:    #2e1065;
+  --shell-accent-fg:       #ffffff;
+
+  /* Semantic: Destructive */
+  --shell-destructive:     #ef4444;
+  --shell-destructive-bg:  #1f0a0a;
+
+  /* Elevation shadows (more opaque in dark) */
+  --shell-shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --shell-shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.2);
+  --shell-shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -2px rgb(0 0 0 / 0.2);
+
+  /* Spacing, radius, typography, and band dimensions are theme-independent */
+}
+
+/* ==========================================================================
+   Base shell styles
+   ========================================================================== */
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--shell-bg);
+  color: var(--shell-text-primary);
+  font-size: var(--shell-text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus ring — accessible, branded */
+:focus-visible {
+  outline: 2px solid var(--shell-border-focus);
+  outline-offset: 2px;
+}
