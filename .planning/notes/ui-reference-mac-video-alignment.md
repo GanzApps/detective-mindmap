@@ -1,9 +1,9 @@
 ---
 title: "UI reference alignment from MAC video"
 date: "2026-04-10"
-context: "Video review of C:/Users/OeganZ/Downloads/2026-04-09.mp4 for dashboard layout, positioning, and interaction alignment."
+context: "Video review of the repo-local MAC reference recording for dashboard layout, positioning, and interaction alignment."
 source_type: "video"
-source_path: "C:/Users/OeganZ/Downloads/2026-04-09.mp4"
+source_path: ".planning/references/mac-ui-reference/2026-04-09.mp4"
 ---
 
 # UI Reference Alignment Snapshot
@@ -11,6 +11,13 @@ source_path: "C:/Users/OeganZ/Downloads/2026-04-09.mp4"
 ## Purpose
 
 Capture the key UI, UX, and layout signals from the MAC reference video so future planning and implementation can align to the same source without repeatedly re-watching the recording.
+
+## Workspace Reference Assets
+
+- Video: `.planning/references/mac-ui-reference/2026-04-09.mp4`
+- Representative frame: `.planning/references/mac-ui-reference/frame_0000.png`
+- Representative frame: `.planning/references/mac-ui-reference/frame_0300.png`
+- Representative frame: `.planning/references/mac-ui-reference/frame_0480.png`
 
 ## Key Screens Observed
 
