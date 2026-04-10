@@ -2,75 +2,54 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-09)
+See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`
 
-**Core value:** A detective must be able to load a case, see all entities and their connections in an interactive graph, and switch between 2D and 3D views without losing context.
-**Current focus:** Phase 7 complete - export workflow verified
+**Core value:** A detective must be able to open a case, understand the workspace immediately, focus the relevant network, and move between 2D and 3D without losing context.
+**Current focus:** Phase 9 context is now gathered against the repaired workspace revamp roadmap. Phase 8 remains complete groundwork; Phase 9 is ready for planning.
 
 ## Current Position
 
-Phase: 7 of 7 (Export)
-Plan: 4 of 4 in current phase
-Status: Phase 7 complete - v1 roadmap implemented
-Last activity: 2026-04-09 - Phase 7 executed and verified
+Phase: 9 of 12
+Plan: context gathered for current phase
+Status: Phase 9 ready for planning
+Last activity: 2026-04-10 - captured Phase 9 context decisions
 
-Progress: [##########] 100%
+Progress: [###-------] 25%
 
-## Performance Metrics
+## Current Truth
 
-**Velocity:**
-- Total plans completed: 38
-- Average duration: 10 min
-- Total execution time: 280 min
+- Phase 8 (`design-tokens-shell-alignment`) exists on disk, was executed, and passed UAT
+- Phase 8 should be treated as groundwork, not as the full UI revamp
+- The old milestone-1 planning docs had drifted and were incorrectly still acting as top-level source of truth
+- The revamp direction is now restored in the main planning files and reference notes
+- Phase 9 decisions now locked: `Raw Evidence` default rail tab, always-visible bottom-right minimap, quiet default right analysis panel, collapsed-by-default timeline with visible handle
 
-**By Phase:**
+## Verification Status
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1 | 5 | 50 min | 10 min |
-| 2 | 5 | 50 min | 10 min |
-| 3 | 5 | 50 min | 10 min |
-| 4 | 5 | 50 min | 10 min |
-| 5 | 5 | 50 min | 10 min |
-| 6 | 4 | 40 min | 10 min |
-| 7 | 4 | 40 min | 10 min |
+- Phase 8 UAT: complete (`7/7` passed)
+- Security review for Phase 8: not yet recorded
+- Next recommended gate before advancing execution: `/gsd-secure-phase 8`
 
-**Recent Trend:**
-- Last 5 plans: 06-04, 07-01, 07-02, 07-03, 07-04
-- Trend: Stable
+## Next Actions
 
-*Updated after each plan completion*
+1. Run `/gsd-secure-phase 8`
+2. Run `/gsd-plan-phase 9`
+3. Execute Phase 9 against the repaired revamp roadmap
 
-## Accumulated Context
+## Blockers / Concerns
 
-### Decisions
+- The repo-local reference set had been partially lost and was restored only in part during planning repair
+- Additional screenshots or extracted frames can still be re-added later if needed, but the critical video and graph workspace screenshot are now back in the repo
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+## Reference Assets
 
-- Phase 1: Shared graph schemas stay free of x/y/z coordinates so renderers own spatial state
-- Phase 1: Mock case data is validated with `CaseSchema.parse()` at import time
-- Phase 1: All data access goes through `CaseRepository` rather than direct fixture imports
-- Phase 2: `/` redirects directly into `/cases`, and the list route acts as the primary app entry
-- Phase 2: Modal/dialog flows are the default UX for create/delete case graph mutations
-- Phase 2: Evidence clicks already resolve to shared highlighted entity IDs through the app store
-- Phase 3: The 3D renderer is live; camera state and animation stay in refs while projection and hit testing remain pure functions
-- Phase 4: The 2D renderer is live; simulation setup stays separate from redraw-only state, and search recenters the best match without recreating the layout
-- Phase 5: CSS `display:none` toggle, not unmount; both renderers remain mounted to preserve state
-- Phase 5: The shared floating node detail card is now the single cross-renderer analysis surface, and targeted RTL coverage protects header/sidebar/panel behavior
-- Phase 6: Filters dim non-matching nodes instead of removing them, shared label/focus toggles drive both renderers, and practical case/workspace state rehydrates from localStorage
-- Phase 7: Export now routes through one header menu, captures the active renderer canvas first, and composes PDF reports in a dedicated export utility layer
+- `.planning/references/mac-ui-reference/2026-04-09.mp4`
+- `.planning/references/mac-ui-reference/graph-view-selected-filters.png`
 
-### Pending Todos
+## Resume Point
 
-None.
+Resume from: `.planning/phases/09-workspace-frame-panels/09-CONTEXT.md`
+Next phase entry: `.planning/ROADMAP.md` -> Phase 9 planning
 
-### Blockers/Concerns
-
-- No active blockers.
-
-## Session Continuity
-
-Last session: 2026-04-09
-Stopped at: Phase 7 executed and verified
-Resume file: .planning/phases/07-export/07-VERIFICATION.md
+---
+*Last updated: 2026-04-10 after Phase 9 discussion capture*
