@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`
 
 **Core value:** A detective must be able to open a case, understand the workspace immediately, focus the relevant network, and move between 2D and 3D without losing context.
-**Current focus:** Phase 9 context is now gathered against the repaired workspace revamp roadmap. Phase 8 remains complete groundwork; Phase 9 is ready for planning.
+**Current focus:** Phase 9 planning is complete against the repaired workspace revamp roadmap. Phase 8 remains complete groundwork; Phase 9 is ready to execute.
 
 ## Current Position
 
 Phase: 9 of 12
-Plan: context gathered for current phase
-Status: Phase 9 ready for planning
-Last activity: 2026-04-10 - captured Phase 9 context decisions
+Plan: 3 of 3 planned for current phase
+Status: Phase 9 planned and ready to execute
+Last activity: 2026-04-10 - planned Phase 9 workspace frame and panels
 
-Progress: [###-------] 25%
+Progress: [####------] 30%
 
 ## Current Truth
 
@@ -23,6 +23,7 @@ Progress: [###-------] 25%
 - The old milestone-1 planning docs had drifted and were incorrectly still acting as top-level source of truth
 - The revamp direction is now restored in the main planning files and reference notes
 - Phase 9 decisions now locked: `Raw Evidence` default rail tab, always-visible bottom-right minimap, quiet default right analysis panel, collapsed-by-default timeline with visible handle
+- Phase 9 planning is now written as three waves: left rail/tab migration, right panel + minimap integration, timeline collapse + validation
 
 ## Verification Status
 
@@ -33,8 +34,8 @@ Progress: [###-------] 25%
 ## Next Actions
 
 1. Run `/gsd-secure-phase 8`
-2. Run `/gsd-plan-phase 9`
-3. Execute Phase 9 against the repaired revamp roadmap
+2. Run `/gsd-execute-phase 9`
+3. Verify Phase 9 against the repaired revamp roadmap
 
 ## Blockers / Concerns
 
@@ -48,8 +49,8 @@ Progress: [###-------] 25%
 
 ## Resume Point
 
-Resume from: `.planning/phases/09-workspace-frame-panels/09-CONTEXT.md`
-Next phase entry: `.planning/ROADMAP.md` -> Phase 9 planning
+Resume from: `.planning/phases/09-workspace-frame-panels/09-01-PLAN.md`
+Next phase entry: `.planning/ROADMAP.md` -> Phase 9 execution
 
 ---
-*Last updated: 2026-04-10 after Phase 9 discussion capture*
+*Last updated: 2026-04-10 after Phase 9 planning*
