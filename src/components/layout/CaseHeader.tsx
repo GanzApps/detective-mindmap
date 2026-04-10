@@ -1,18 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { type Case } from '@/lib/data/dataTypes';
 import { type ExportFormat } from '@/lib/export/exportTypes';
 
 function statusClasses(status: Case['status']) {
   switch (status) {
     case 'active':
-      return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100';
+      return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
     case 'closed':
-      return 'border-amber-400/20 bg-amber-400/10 text-amber-100';
+      return 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400';
     case 'archived':
-      return 'border-slate-400/20 bg-slate-400/10 text-slate-200';
+      return 'border-shell-border bg-shell-surface-raised text-shell-text-muted';
     default:
-      return 'border-slate-400/20 bg-slate-400/10 text-slate-200';
+      return 'border-shell-border bg-shell-surface-raised text-shell-text-muted';
   }
 }
 
@@ -41,123 +42,153 @@ export default function CaseHeader({
   onExport: (format: ExportFormat) => void;
   isExporting?: boolean;
 }) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+
   return (
-    <header className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-xs uppercase tracking-[0.32em] text-cyan-300/70">
+    <header className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-lg shadow-shell-sm">
+      <div className="flex flex-col gap-shell-md xl:flex-row xl:items-start xl:justify-between">
+        {/* Case identity */}
+        <div className="space-y-shell-sm">
+          <div className="flex flex-wrap items-center gap-shell-sm">
+            <p className="text-xs font-medium uppercase tracking-widest text-shell-text-muted">
               Investigation Workspace
             </p>
             <span
-              className={`rounded-full border px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] ${statusClasses(caseData.status)}`}
+              className={`rounded-shell-pill border px-shell-sm py-1 text-xs font-medium uppercase tracking-widest ${statusClasses(caseData.status)}`}
             >
               {caseData.status}
             </span>
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-50">
+            <h1 className="text-2xl font-semibold tracking-tight text-shell-text-primary">
               {caseData.name}
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-shell-text-secondary">
               {caseData.description}
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <details className="relative">
-            <summary className="list-none rounded-full border border-cyan-400/30 bg-cyan-400/10 px-5 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-300/10">
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </summary>
-            <div className="absolute right-0 z-10 mt-3 min-w-56 rounded-2xl border border-slate-800 bg-slate-950/95 p-2 shadow-2xl shadow-black/40">
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('png')}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                PNG snapshot
-              </button>
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('pdf')}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                PDF report
-              </button>
-              <button
-                type="button"
-                disabled={isExporting}
-                onClick={() => onExport('both')}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                PNG + PDF
-              </button>
-            </div>
-          </details>
-          <details className="relative">
-            <summary className="list-none rounded-full border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-100 transition hover:border-slate-500">
+
+        {/* Top action area */}
+        <div className="flex flex-wrap items-center gap-shell-sm">
+          {/* Export menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setExportOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setExportOpen(false), 150)}
+              className="rounded-shell-pill bg-shell-accent px-shell-md py-shell-sm text-sm font-semibold text-shell-accent-fg transition hover:bg-shell-accent-hover"
+            >
+              {isExporting ? 'Exporting\u2026' : 'Export Report'}
+            </button>
+            {exportOpen && (
+              <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('png'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PNG snapshot
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('pdf'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PDF report
+                </button>
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => { onExport('both'); setExportOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  PNG + PDF
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Actions menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActionsOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setActionsOpen(false), 150)}
+              className="rounded-shell-pill border border-shell-border px-shell-md py-shell-sm text-sm font-semibold text-shell-text-primary transition hover:border-shell-border-strong hover:bg-shell-surface-raised"
+            >
               Actions
-            </summary>
-            <div className="absolute right-0 z-10 mt-3 min-w-56 rounded-2xl border border-slate-800 bg-slate-950/95 p-2 shadow-2xl shadow-black/40">
-              <button
-                type="button"
-                onClick={onOpenEntityModal}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900"
-              >
-                Add entity
-              </button>
-              <button
-                type="button"
-                onClick={onOpenConnectionModal}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900"
-              >
-                Add connection
-              </button>
-              <button
-                type="button"
-                onClick={onClearHighlights}
-                className="block w-full rounded-xl px-4 py-3 text-left text-sm text-slate-200 transition hover:bg-slate-900"
-              >
-                Clear evidence highlight
-              </button>
-            </div>
-          </details>
+            </button>
+            {actionsOpen && (
+              <div className="absolute right-0 z-10 mt-2 min-w-48 rounded-shell-xl border border-shell-border bg-shell-surface p-1 shadow-shell-lg">
+                <button
+                  type="button"
+                  onClick={() => { onOpenEntityModal(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Add entity
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onOpenConnectionModal(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Add connection
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onClearHighlights(); setActionsOpen(false); }}
+                  className="block w-full rounded-shell-lg px-shell-md py-shell-sm text-left text-sm text-shell-text-primary transition hover:bg-shell-surface-raised"
+                >
+                  Clear evidence highlight
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 border-t border-slate-800 pt-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-3">
-          <div className="rounded-full border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm text-slate-200">
+      {/* Stats and view mode row */}
+      <div className="mt-shell-md flex flex-col gap-shell-sm border-t border-shell-border pt-shell-md lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-shell-sm">
+          <span className="rounded-shell-pill border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm text-sm text-shell-text-secondary">
             {entityCount} entities
-          </div>
-          <div className="rounded-full border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm text-slate-200">
+          </span>
+          <span className="rounded-shell-pill border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm text-sm text-shell-text-secondary">
             {connectionCount} connections
-          </div>
-          <div className="rounded-full border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm text-slate-200">
-            {highlightedCount} highlighted
-          </div>
+          </span>
+          {highlightedCount > 0 && (
+            <span className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-shell-md py-shell-sm text-sm text-shell-accent">
+              {highlightedCount} highlighted
+            </span>
+          )}
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+
+        {/* View mode toggle */}
+        <div className="flex items-center gap-shell-sm">
           <button
             type="button"
+            aria-label="2D view"
             onClick={() => onSetViewMode('2d')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-shell-pill px-shell-md py-shell-sm text-sm font-medium transition ${
               viewMode === '2d'
-                ? 'bg-slate-100 text-slate-950'
-                : 'border border-slate-700 text-slate-200 hover:border-slate-500'
+                ? 'bg-shell-accent text-shell-accent-fg'
+                : 'border border-shell-border text-shell-text-secondary hover:border-shell-border-strong hover:text-shell-text-primary'
             }`}
           >
             2D view
           </button>
           <button
             type="button"
+            aria-label="3D view"
             onClick={() => onSetViewMode('3d')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-shell-pill px-shell-md py-shell-sm text-sm font-medium transition ${
               viewMode === '3d'
-                ? 'bg-slate-100 text-slate-950'
-                : 'border border-slate-700 text-slate-200 hover:border-slate-500'
+                ? 'bg-shell-accent text-shell-accent-fg'
+                : 'border border-shell-border text-shell-text-secondary hover:border-shell-border-strong hover:text-shell-text-primary'
             }`}
           >
             3D view

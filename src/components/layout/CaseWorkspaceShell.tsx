@@ -84,7 +84,7 @@ export default function CaseWorkspaceShell({
   const selectedNodeLabel = selectedNode?.label ?? 'No active node';
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-shell-lg">
       <CaseHeader
         caseData={caseData}
         entityCount={caseData.graph.nodes.length}
@@ -99,20 +99,20 @@ export default function CaseWorkspaceShell({
         isExporting={isExporting}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-shell-lg lg:grid-cols-[320px_minmax(0,1fr)]">
         <EvidenceSidebar
           evidence={caseData.evidence}
           selectedEvidenceId={highlightedEvidenceId}
           onEvidenceSelect={onSelectEvidence}
         />
 
-        <div className="space-y-6">
+        <div className="space-y-shell-lg">
           <GraphWorkspace
             ref={graphWorkspaceRef}
             {...graphWorkspaceProps}
           />
 
-          <div className="space-y-4">
+          <div className="space-y-shell-md">
             <TimelineBar
               caseData={caseData}
               activeEvidenceLabel={activeEvidenceLabel}
@@ -122,21 +122,21 @@ export default function CaseWorkspaceShell({
             <AICommandBar />
           </div>
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
+          <section className="grid gap-shell-lg xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-lg">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
                     Entities
                   </p>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-50">
+                  <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">
                     Graph Nodes
                   </h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowEntityModal(true)}
-                  className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300"
+                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-4 py-2 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
                 >
                   Add entity
                 </button>
@@ -149,12 +149,12 @@ export default function CaseWorkspaceShell({
                   return (
                     <div
                       key={node.id}
-                      className={`rounded-3xl border px-4 py-4 transition ${
+                      className={`rounded-shell-lg border px-4 py-4 transition ${
                         isSelected
-                          ? 'border-cyan-400/40 bg-cyan-400/10'
+                          ? 'border-shell-accent/40 bg-shell-accent-muted'
                           : isHighlighted
                             ? 'border-amber-400/30 bg-amber-400/10'
-                            : 'border-slate-800 bg-slate-950/70'
+                            : 'border-shell-border bg-shell-bg'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -163,15 +163,15 @@ export default function CaseWorkspaceShell({
                           onClick={() => onSelectNode(isSelected ? null : node.id)}
                           className="text-left"
                         >
-                          <p className="text-sm font-semibold text-slate-50">{node.label}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                          <p className="text-sm font-semibold text-shell-text-primary">{node.label}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-shell-text-muted">
                             {node.type} · {node.status}
                           </p>
                         </button>
                         <button
                           type="button"
                           onClick={() => setEntityToDelete(node.id)}
-                          className="rounded-full border border-rose-500/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-rose-200 transition hover:border-rose-400"
+                          className="rounded-shell-pill border border-shell-destructive/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
                         >
                           Delete
                         </button>
@@ -182,20 +182,20 @@ export default function CaseWorkspaceShell({
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
+            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-lg">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
                     Connections
                   </p>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-50">
+                  <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">
                     Relationship Edges
                   </h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowConnectionModal(true)}
-                  className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300"
+                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-4 py-2 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
                 >
                   Add connection
                 </button>
@@ -208,21 +208,21 @@ export default function CaseWorkspaceShell({
                   return (
                     <div
                       key={edge.id}
-                      className="rounded-3xl border border-slate-800 bg-slate-950/70 px-4 py-4"
+                      className="rounded-shell-lg border border-shell-border bg-shell-bg px-4 py-4"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-sm font-semibold text-slate-50">
+                          <p className="text-sm font-semibold text-shell-text-primary">
                             {source?.label ?? edge.source} → {target?.label ?? edge.target}
                           </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-shell-text-muted">
                             {edge.label} · strength {edge.strength.toFixed(1)}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => setConnectionToDelete(edge.id)}
-                          className="rounded-full border border-rose-500/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-rose-200 transition hover:border-rose-400"
+                          className="rounded-shell-pill border border-shell-destructive/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
                         >
                           Delete
                         </button>

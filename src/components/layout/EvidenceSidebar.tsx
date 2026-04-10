@@ -12,23 +12,23 @@ export default function EvidenceSidebar({
   onEvidenceSelect: (file: EvidenceFile) => void;
 }) {
   return (
-    <aside className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-black/30">
-      <div className="mb-5">
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+    <aside className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-sm">
+      <div className="mb-shell-md">
+        <p className="text-xs font-medium uppercase tracking-widest text-shell-text-muted">
           Evidence Sidebar
         </p>
-        <h2 className="mt-2 text-xl font-semibold text-slate-50">Filed Evidence</h2>
+        <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">Filed Evidence</h2>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-shell-sm">
         {evidence.map((category) => (
-          <section key={category.id} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-200">
+          <section key={category.id} className="rounded-shell-lg border border-shell-border bg-shell-surface-raised p-shell-md">
+            <div className="mb-shell-sm flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-shell-text-secondary">
                 {category.name}
               </h3>
-              <span className="text-xs text-slate-500">{category.files.length} files</span>
+              <span className="text-xs text-shell-text-muted">{category.files.length} files</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-shell-sm">
               {category.files.map((file) => {
                 const isActive = selectedEvidenceId === file.id;
 
@@ -37,20 +37,20 @@ export default function EvidenceSidebar({
                     key={file.id}
                     type="button"
                     onClick={() => onEvidenceSelect(file)}
-                    className={`block w-full rounded-2xl border px-4 py-3 text-left transition ${
+                    className={`block w-full rounded-shell-lg border px-shell-md py-shell-sm text-left transition ${
                       isActive
-                        ? 'border-cyan-400/40 bg-cyan-400/10 text-cyan-50'
-                        : 'border-slate-800 bg-slate-900/50 text-slate-200 hover:border-slate-600 hover:bg-slate-900'
+                        ? 'border-shell-accent/40 bg-shell-accent-muted text-shell-text-primary'
+                        : 'border-shell-border bg-shell-surface text-shell-text-secondary hover:border-shell-border-strong hover:bg-shell-surface-raised'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-shell-sm">
                       <div>
-                        <p className="text-sm font-medium">{file.name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                        <p className="text-sm font-medium text-shell-text-primary">{file.name}</p>
+                        <p className="mt-1 text-xs uppercase tracking-widest text-shell-text-muted">
                           {file.type.replace('_', ' ')}
                         </p>
                       </div>
-                      <span className="shrink-0 text-xs text-slate-500">{file.size}</span>
+                      <span className="shrink-0 text-xs text-shell-text-muted">{file.size}</span>
                     </div>
                   </button>
                 );
