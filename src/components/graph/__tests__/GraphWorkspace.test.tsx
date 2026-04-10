@@ -74,7 +74,7 @@ describe('GraphWorkspace', () => {
     });
   });
 
-  it('keeps both renderer shells mounted and shows the shared detail panel', () => {
+  it('keeps both renderer shells mounted and shows the persistent minimap shell', () => {
     render(
       <GraphWorkspace
         caseData={mockCases[0]}
@@ -88,8 +88,8 @@ describe('GraphWorkspace', () => {
 
     expect(screen.getByTestId('force-graph-2d')).toBeInTheDocument();
     expect(screen.getByTestId('mindmap-3d')).toBeInTheDocument();
-    expect(screen.getByLabelText('Node detail panel')).toBeInTheDocument();
-    expect(screen.getByText('Investigation controls')).toBeInTheDocument();
+    expect(screen.getByLabelText('Workspace minimap')).toBeInTheDocument();
+    expect(screen.getByText('Active node: Marco Delgado')).toBeInTheDocument();
   });
 
   it('dismisses the shared panel on Escape', () => {
@@ -111,23 +111,23 @@ describe('GraphWorkspace', () => {
     expect(onSelectNode).toHaveBeenCalledWith(null);
   });
 
-  it('updates shared filter and layer state through the control panel', () => {
+  it('routes renderer switching through the shared workspace toggle', () => {
+    const onSetViewMode = jest.fn();
+
     render(
       <GraphWorkspace
         caseData={mockCases[0]}
         viewMode="2d"
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002']}
-        onSetViewMode={() => {}}
+        onSetViewMode={onSetViewMode}
         onSelectNode={() => {}}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /dim all/i }));
-    fireEvent.click(screen.getByLabelText(/edge labels/i));
+    fireEvent.click(screen.getByRole('button', { name: '3D workspace' }));
 
-    expect(useCaseStore.getState().activeFilters).toEqual([]);
-    expect(useCaseStore.getState().layerPreferences.showEdgeLabels).toBe(false);
+    expect(onSetViewMode).toHaveBeenCalledWith('3d');
   });
 
   it('exposes the active renderer export target through the shared ref', () => {

@@ -3,7 +3,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { drawFrame3D } from '@/lib/graph/renderer3d';
 import { hitTest3D } from '@/lib/graph/hitTest3d';
-import { type EntityType, type GraphData, getConnectedIds } from '@/lib/graph/graphTypes';
+import { ENTITY_TYPE_COLOR, type EntityType, type GraphData, getConnectedIds } from '@/lib/graph/graphTypes';
+import { type GraphMinimapState } from '@/components/graph/graphMinimapTypes';
 import { ENTITY_FILTER_OPTIONS } from '@/store/caseStore';
 
 function clamp(value: number, min: number, max: number) {
@@ -25,6 +26,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
   onSelectNode: (nodeId: string | null) => void;
+  onMinimapStateChange?: (state: GraphMinimapState) => void;
 }>(function MindMap3D({
   graph,
   selectedNodeId,
@@ -34,6 +36,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   focusSelectedNeighborhood = true,
   isActive,
   onSelectNode,
+  onMinimapStateChange,
 }, ref) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -42,9 +45,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const viewportRef = useRef({ width: 0, height: 0 });
   const frameRef = useRef<ReturnType<typeof drawFrame3D> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const autoRotateRef = useRef(true);
-  const labelsRef = useRef(showNodeLabels);
   const draggingRef = useRef(false);
   const dragMovedRef = useRef(false);
   const pointerRef = useRef({ x: 0, y: 0 });
@@ -56,6 +57,43 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const showNodeLabelsRef = useRef(showNodeLabels);
   const focusSelectedNeighborhoodRef = useRef(focusSelectedNeighborhood);
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true);
+
+  function emitMinimapState() {
+    if (!onMinimapStateChange || !frameRef.current) {
+      return;
+    }
+
+    const projectedNodes = frameRef.current.projectedNodes;
+    const minX = Math.min(...projectedNodes.map((node) => node.sx));
+    const maxX = Math.max(...projectedNodes.map((node) => node.sx));
+    const minY = Math.min(...projectedNodes.map((node) => node.sy));
+    const maxY = Math.max(...projectedNodes.map((node) => node.sy));
+    const width = Math.max(maxX - minX, 1);
+    const height = Math.max(maxY - minY, 1);
+    const zoom = cameraRef.current.zoom;
+    const viewportWidth = clamp(0.82 / zoom, 0.2, 0.9);
+    const viewportHeight = clamp(0.82 / zoom, 0.2, 0.9);
+    const viewportX = clamp(((Math.sin(cameraRef.current.rotY) + 1) / 2) * (1 - viewportWidth), 0, 1 - viewportWidth);
+    const viewportY = clamp(((Math.sin(cameraRef.current.rotX) + 1) / 2) * (1 - viewportHeight), 0, 1 - viewportHeight);
+
+    onMinimapStateChange({
+      label: '3D',
+      points: projectedNodes.map((node) => ({
+        id: node.id,
+        x: (node.sx - minX) / width,
+        y: (node.sy - minY) / height,
+        color: ENTITY_TYPE_COLOR[node.node.type],
+        active: selectedNodeIdRef.current === node.id,
+        dimmed: !activeEntityTypesRef.current.includes(node.node.type),
+      })),
+      viewport: {
+        x: viewportX,
+        y: viewportY,
+        width: viewportWidth,
+        height: viewportHeight,
+      },
+    });
+  }
 
   function drawCurrentFrame() {
     const canvas = canvasRef.current;
@@ -83,6 +121,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       },
     );
     needsRedrawRef.current = false;
+    emitMinimapState();
   }
 
   useImperativeHandle(ref, () => ({
@@ -125,20 +164,22 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   useEffect(() => {
     selectedNodeIdRef.current = selectedNodeId;
     needsRedrawRef.current = true;
+    emitMinimapState();
   }, [selectedNodeId]);
 
   useEffect(() => {
     highlightedNodeIdsRef.current = highlightedNodeIds;
     needsRedrawRef.current = true;
+    emitMinimapState();
   }, [highlightedNodeIds]);
 
   useEffect(() => {
     activeEntityTypesRef.current = activeEntityTypes;
     needsRedrawRef.current = true;
+    emitMinimapState();
   }, [activeEntityTypes]);
 
   useEffect(() => {
-    labelsRef.current = showNodeLabels;
     showNodeLabelsRef.current = showNodeLabels;
     needsRedrawRef.current = true;
   }, [showNodeLabels]);
@@ -146,6 +187,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   useEffect(() => {
     focusSelectedNeighborhoodRef.current = focusSelectedNeighborhood;
     needsRedrawRef.current = true;
+    emitMinimapState();
   }, [focusSelectedNeighborhood]);
 
   useEffect(() => {
@@ -159,6 +201,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   useEffect(() => {
     if (isActive) {
       needsRedrawRef.current = true;
+      emitMinimapState();
     }
   }, [isActive]);
 
@@ -198,7 +241,6 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     });
 
     resizeObserver.observe(wrapperElement);
-    resizeObserverRef.current = resizeObserver;
 
     let running = true;
 
@@ -229,9 +271,8 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         window.cancelAnimationFrame(animationFrameRef.current);
       }
       resizeObserver.disconnect();
-      resizeObserverRef.current = null;
     };
-  }, [graph]);
+  }, [graph, onMinimapStateChange]);
 
   useEffect(() => {
     function handleMouseUp() {
@@ -265,22 +306,22 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   }
 
   return (
-    <section className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
+    <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+          <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
             3D Renderer
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-50">MindMap3D</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">MindMap3D</h2>
         </div>
-        <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-100">
+        <div className="rounded-shell-pill border border-shell-accent/20 bg-shell-accent-muted px-4 py-2 text-sm text-shell-text-primary">
           {highlightedNodeIds.length} highlighted
         </div>
       </div>
 
       <div
         ref={wrapperRef}
-        className="relative h-[620px] overflow-hidden rounded-[1.75rem] border border-slate-800 bg-[#07090f]"
+        className="relative h-[620px] overflow-hidden rounded-shell-xl border border-shell-border bg-shell-bg"
       >
         <canvas
           ref={canvasRef}
@@ -309,6 +350,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
             autoRotateRef.current = false;
             setAutoRotateEnabled(false);
             needsRedrawRef.current = true;
+            emitMinimapState();
           }}
           onMouseLeave={() => {
             hoverNodeIdRef.current = null;
@@ -348,6 +390,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
             autoRotateRef.current = false;
             setAutoRotateEnabled(false);
             needsRedrawRef.current = true;
+            emitMinimapState();
           }}
           onWheel={(event) => {
             event.preventDefault();
@@ -357,6 +400,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               3.5,
             );
             needsRedrawRef.current = true;
+            emitMinimapState();
           }}
         />
         <div
@@ -373,8 +417,9 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               setAutoRotateEnabled(true);
               autoRotateRef.current = true;
               needsRedrawRef.current = true;
+              emitMinimapState();
             }}
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-3 py-1.5 text-xs text-shell-text-secondary transition hover:bg-shell-surface hover:text-shell-text-primary"
           >
             Reset
           </button>
@@ -384,12 +429,12 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               setAutoRotateEnabled((current) => !current);
               needsRedrawRef.current = true;
             }}
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-3 py-1.5 text-xs text-shell-text-secondary transition hover:bg-shell-surface hover:text-shell-text-primary"
           >
             {autoRotateEnabled ? 'Pause' : 'Rotate'}
           </button>
         </div>
-        <div className="absolute bottom-3 left-3 text-xs text-white/25">
+        <div className="absolute bottom-3 left-3 text-xs text-shell-text-muted">
           Drag to rotate · Scroll to zoom · Click node to highlight
         </div>
       </div>

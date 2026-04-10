@@ -27,12 +27,15 @@ describe('CaseHeader', () => {
     expect(screen.getByText('25 connections')).toBeInTheDocument();
     expect(screen.getByText('3 highlighted')).toBeInTheDocument();
     expect(screen.getByText('Export Report')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'PNG snapshot' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'PDF report' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'PNG + PDF' })).toBeInTheDocument();
     expect(screen.getByText('Actions')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D view' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '3D view' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export Report' }));
+
+    expect(screen.getByRole('button', { name: 'PNG snapshot' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'PDF report' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'PNG + PDF' })).toBeInTheDocument();
   });
 
   it('routes export and action controls through the provided callbacks', () => {
@@ -58,9 +61,13 @@ describe('CaseHeader', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: '3D view' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Export Report' }));
     fireEvent.click(screen.getByRole('button', { name: 'PNG snapshot' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     fireEvent.click(screen.getByText('Add entity'));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     fireEvent.click(screen.getByText('Add connection'));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     fireEvent.click(screen.getByText('Clear evidence highlight'));
 
     expect(onSetViewMode).toHaveBeenCalledWith('3d');

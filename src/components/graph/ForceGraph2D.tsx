@@ -23,6 +23,7 @@ import {
   type ForceGraphNodeDatum,
 } from '@/lib/graph/forceSimulation';
 import { type EntityType, type GraphData } from '@/lib/graph/graphTypes';
+import { type GraphMinimapState } from '@/components/graph/graphMinimapTypes';
 import { ENTITY_FILTER_OPTIONS } from '@/store/caseStore';
 
 interface PointerState {
@@ -70,6 +71,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   isActive: boolean;
   onSearchQueryChange: (value: string) => void;
   onSelectNode: (nodeId: string | null) => void;
+  onMinimapStateChange?: (state: GraphMinimapState) => void;
 }>(function ForceGraph2D({
   graph,
   selectedNodeId,
@@ -82,6 +84,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   isActive,
   onSearchQueryChange,
   onSelectNode,
+  onMinimapStateChange,
 }, ref) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,7 +95,6 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const edgesRef = useRef<ForceGraphEdgeDatum[]>([]);
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const animationFrameRef = useRef<number | null>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const selectedNodeIdRef = useRef<string | null>(selectedNodeId);
   const highlightedNodeIdsRef = useRef<string[]>(highlightedNodeIds);
   const activeEntityTypesRef = useRef<EntityType[]>(activeEntityTypes);
@@ -108,6 +110,40 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
   const searchMatches = useMemo(() => getSearchMatches(graph.nodes, searchQuery), [graph.nodes, searchQuery]);
   const bestSearchMatchId = useMemo(() => getBestSearchMatch(graph.nodes, searchQuery)?.id ?? null, [graph.nodes, searchQuery]);
+
+  function emitMinimapState() {
+    if (!onMinimapStateChange || nodesRef.current.length === 0) {
+      return;
+    }
+
+    const bounds = getGraphBounds(nodesRef.current);
+    const width = Math.max(bounds.width, 1);
+    const height = Math.max(bounds.height, 1);
+    const transform = transformRef.current;
+    const viewport = viewportRef.current;
+    const left = (-transform.x) / transform.k;
+    const top = (-transform.y) / transform.k;
+    const right = (viewport.width - transform.x) / transform.k;
+    const bottom = (viewport.height - transform.y) / transform.k;
+
+    onMinimapStateChange({
+      label: '2D',
+      points: nodesRef.current.map((node) => ({
+        id: node.id,
+        x: (node.x - bounds.minX) / width,
+        y: (node.y - bounds.minY) / height,
+        color: node.color,
+        active: selectedNodeIdRef.current === node.id,
+        dimmed: !activeEntityTypesRef.current.includes(node.type),
+      })),
+      viewport: {
+        x: Math.max(0, Math.min(1, (left - bounds.minX) / width)),
+        y: Math.max(0, Math.min(1, (top - bounds.minY) / height)),
+        width: Math.max(0.12, Math.min(1, (right - left) / width)),
+        height: Math.max(0.12, Math.min(1, (bottom - top) / height)),
+      },
+    });
+  }
 
   function drawCurrentFrame() {
     const canvas = canvasRef.current;
@@ -144,7 +180,6 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
     animationFrameRef.current = window.requestAnimationFrame(() => {
       animationFrameRef.current = null;
-
       drawCurrentFrame();
     });
   }
@@ -180,6 +215,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
     const nextTransform = getFitTransform(viewportRef.current.width, viewportRef.current.height, nodesRef.current);
     selection.call(behavior.transform, nextTransform);
+    emitMinimapState();
   }
 
   function focusNode(nodeId: string | null) {
@@ -204,21 +240,25 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       .scale(nextScale);
 
     selection.call(behavior.transform, nextTransform);
+    emitMinimapState();
   }
 
   useEffect(() => {
     selectedNodeIdRef.current = selectedNodeId;
     scheduleDraw();
+    emitMinimapState();
   }, [selectedNodeId]);
 
   useEffect(() => {
     highlightedNodeIdsRef.current = highlightedNodeIds;
     scheduleDraw();
+    emitMinimapState();
   }, [highlightedNodeIds]);
 
   useEffect(() => {
     activeEntityTypesRef.current = activeEntityTypes;
     scheduleDraw();
+    emitMinimapState();
   }, [activeEntityTypes]);
 
   useEffect(() => {
@@ -234,6 +274,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   useEffect(() => {
     focusSelectedNeighborhoodRef.current = focusSelectedNeighborhood;
     scheduleDraw();
+    emitMinimapState();
   }, [focusSelectedNeighborhood]);
 
   useEffect(() => {
@@ -248,6 +289,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   useEffect(() => {
     if (isActive) {
       scheduleDraw();
+      emitMinimapState();
     }
   }, [isActive]);
 
@@ -280,6 +322,8 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       scheduleDraw();
       if (!userAdjustedViewportRef.current && nodesRef.current.length > 0) {
         applyFitTransform();
+      } else {
+        emitMinimapState();
       }
     };
 
@@ -292,6 +336,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           userAdjustedViewportRef.current = true;
         }
         scheduleDraw();
+        emitMinimapState();
       });
     zoomBehaviorRef.current = zoomBehavior;
 
@@ -332,6 +377,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         subject.fx = worldX;
         subject.fy = worldY;
         scheduleDraw();
+        emitMinimapState();
       })
       .on('end', (event: any, subject: any) => {
         if (!subject) {
@@ -348,6 +394,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
         dragActivatedRef.current = false;
         scheduleDraw();
+        emitMinimapState();
       });
 
     selection
@@ -397,16 +444,14 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       resizeCanvas();
     });
     resizeObserver.observe(wrapper);
-    resizeObserverRef.current = resizeObserver;
 
     return () => {
       resizeObserver.disconnect();
-      resizeObserverRef.current = null;
       selection.on('.force-graph', null);
       d3SelectionRef.current = null;
       zoomBehaviorRef.current = null;
     };
-  }, [onSelectNode]);
+  }, [onMinimapStateChange, onSelectNode]);
 
   useEffect(() => {
     const bundle = createForceSimulation(graph.nodes, graph.edges);
@@ -422,6 +467,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     window.requestAnimationFrame(() => {
       applyFitTransform();
       scheduleDraw();
+      emitMinimapState();
     });
 
     return () => {
@@ -431,29 +477,29 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       nodesRef.current = [];
       edgesRef.current = [];
     };
-  }, [graph]);
+  }, [graph, onMinimapStateChange]);
 
   return (
-    <section className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/30">
+    <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
       <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-cyan-300/70">
+          <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
             2D Renderer
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-50">ForceGraph2D</h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
+          <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">ForceGraph2D</h2>
+          <p className="mt-2 max-w-2xl text-sm text-shell-text-secondary">
             Live force simulation with selectable relationships, bounded pan/zoom, and search-centered navigation.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-[minmax(240px,320px)_auto]">
-          <label className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Search nodes</span>
+          <label className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
+            <span className="text-xs uppercase tracking-[0.2em] text-shell-text-muted">Search nodes</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => onSearchQueryChange(event.target.value)}
               placeholder="Search nodes"
-              className="mt-2 w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
+              className="mt-2 w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
             />
           </label>
           <button
@@ -462,7 +508,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
               userAdjustedViewportRef.current = false;
               applyFitTransform();
             }}
-            className="rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-300/10"
+            className="rounded-shell-lg border border-shell-accent/25 bg-shell-accent-muted px-4 py-3 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
           >
             Zoom to Fit
           </button>
@@ -471,25 +517,25 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
       <div
         ref={wrapperRef}
-        className="relative h-[620px] overflow-hidden rounded-[1.75rem] border border-slate-800 bg-[#040712]"
+        className="relative h-[620px] overflow-hidden rounded-shell-xl border border-shell-border bg-shell-bg"
       >
         <canvas
           ref={canvasRef}
           className="block h-full w-full cursor-grab active:cursor-grabbing"
         />
-        <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-xs text-white/45 backdrop-blur">
+        <div className="pointer-events-none absolute bottom-4 left-4 rounded-shell-pill border border-shell-border bg-shell-surface/80 px-3 py-1.5 text-xs text-shell-text-muted backdrop-blur">
           Drag nodes to reposition · Drag empty space to pan · Scroll to zoom
         </div>
-        <div className="absolute right-4 top-4 rounded-2xl border border-white/10 bg-[rgba(9,14,25,0.88)] px-4 py-3 text-right shadow-xl shadow-black/20">
-          <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/70">
+        <div className="absolute right-4 top-4 rounded-shell-lg border border-shell-border bg-shell-surface/90 px-4 py-3 text-right shadow-shell-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">
             Search status
           </p>
-          <p className="mt-2 text-sm text-slate-100">
+          <p className="mt-2 text-sm text-shell-text-primary">
             {searchQuery.trim()
               ? `${searchMatches.length} match${searchMatches.length === 1 ? '' : 'es'}`
               : 'No search active'}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-shell-text-secondary">
             {bestSearchMatchId
               ? `Centered on ${graph.nodes.find((node) => node.id === bestSearchMatchId)?.label ?? 'best match'}`
               : selectedNodeId

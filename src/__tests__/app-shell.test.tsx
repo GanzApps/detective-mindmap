@@ -89,7 +89,7 @@ describe('app shell smoke', () => {
     expect(mutatedCase?.graph.edges).toHaveLength(1);
   });
 
-  it('renders the shared graph workspace with both renderer shells and the floating detail panel', () => {
+  it('renders the shared graph workspace with both renderer shells and the persistent minimap', () => {
     const html = renderToStaticMarkup(
       <GraphWorkspace
         caseData={mockCases[0]}
@@ -104,7 +104,7 @@ describe('app shell smoke', () => {
     expect(html).toContain('Dual renderer continuity');
     expect(html).toContain('ForceGraph2D');
     expect(html).toContain('MindMap3D');
-    expect(html).toContain('Node detail panel');
+    expect(html).toContain('Minimap');
     expect(html).toContain('Marco Delgado');
     expect(html).toContain('display:block');
     expect(html).toContain('display:none');
@@ -132,13 +132,16 @@ describe('app shell smoke', () => {
       />,
     );
 
-    expect(html).toContain('Evidence Sidebar');
+    expect(html).toContain('Investigation inputs');
+    expect(html).toContain('Raw Evidence');
+    expect(html).toContain('Filters &amp; Layers');
     expect(html).toContain('Export Report');
     expect(html).toContain('Graph workspace');
-    expect(html).toContain('Timeline and status strip');
-    expect(html).toContain('Command center placeholder');
+    expect(html).toContain('Workspace analysis panel');
+    expect(html).toContain('Marco Delgado');
+    expect(html).toContain('Investigation command center');
+    expect(html).toContain('Timeline');
     expect(html).toContain('iPhone_14_extraction.zip');
-    expect(html).toContain('Active analysis');
   });
 
   it('treats Escape as the shared node-detail dismiss key', () => {

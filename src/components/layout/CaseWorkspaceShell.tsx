@@ -9,10 +9,17 @@ import AICommandBar from '@/components/layout/AICommandBar';
 import CaseHeader from '@/components/layout/CaseHeader';
 import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
 import TimelineBar from '@/components/layout/TimelineBar';
+import WorkspaceAnalysisPanel from '@/components/layout/WorkspaceAnalysisPanel';
+import WorkspaceFiltersPanel from '@/components/layout/WorkspaceFiltersPanel';
 import { type Case, type EvidenceFile } from '@/lib/data/dataTypes';
 import { type ExportFormat } from '@/lib/export/exportTypes';
 import { getEvidenceLabel } from '@/store/caseStore';
 import { type EntityStatus, type EntityType } from '@/lib/graph/graphTypes';
+import {
+  selectActiveFilters,
+  selectLayerPreferences,
+  useCaseStore,
+} from '@/store/caseStore';
 import { type RefObject, useMemo, useState } from 'react';
 
 export default function CaseWorkspaceShell({
@@ -64,10 +71,23 @@ export default function CaseWorkspaceShell({
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<string | null>(null);
   const [connectionToDelete, setConnectionToDelete] = useState<string | null>(null);
+  const activeFilters = useCaseStore(selectActiveFilters);
+  const layerPreferences = useCaseStore(selectLayerPreferences);
+  const toggleEntityFilter = useCaseStore((state) => state.toggleEntityFilter);
+  const setLayerPreference = useCaseStore((state) => state.setLayerPreference);
 
   const selectedNode = useMemo(() => (
     caseData.graph.nodes.find((node) => node.id === selectedNodeId) ?? null
   ), [caseData.graph.nodes, selectedNodeId]);
+  const typeCounts = useMemo(() => {
+    const counts = new Map<EntityType, number>();
+
+    for (const node of caseData.graph.nodes) {
+      counts.set(node.type, (counts.get(node.type) ?? 0) + 1);
+    }
+
+    return counts;
+  }, [caseData.graph.nodes]);
 
   const activeEvidenceFile = caseData.evidence
     .flatMap((category) => category.files)
@@ -82,6 +102,14 @@ export default function CaseWorkspaceShell({
   };
   const activeEvidenceLabel = activeEvidenceFile ? getEvidenceLabel(activeEvidenceFile) : 'None selected';
   const selectedNodeLabel = selectedNode?.label ?? 'No active node';
+  const evidenceFiles = caseData.evidence.flatMap((category) => category.files);
+  const evidenceDates = evidenceFiles
+    .map((file) => file.addedAt)
+    .sort((left, right) => left.localeCompare(right));
+  const dateRange = {
+    from: evidenceDates[0]?.slice(0, 10) ?? caseData.createdAt.slice(0, 10),
+    to: evidenceDates[evidenceDates.length - 1]?.slice(0, 10) ?? caseData.updatedAt.slice(0, 10),
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-shell-lg">
@@ -99,11 +127,21 @@ export default function CaseWorkspaceShell({
         isExporting={isExporting}
       />
 
-      <div className="grid gap-shell-lg lg:grid-cols-[320px_minmax(0,1fr)]">
+      <div className="grid gap-shell-lg xl:grid-cols-[320px_minmax(0,1fr)_320px]">
         <EvidenceSidebar
           evidence={caseData.evidence}
           selectedEvidenceId={highlightedEvidenceId}
           onEvidenceSelect={onSelectEvidence}
+          filtersPanel={(
+            <WorkspaceFiltersPanel
+              activeFilters={activeFilters}
+              typeCounts={typeCounts}
+              layerPreferences={layerPreferences}
+              onToggleEntityFilter={toggleEntityFilter}
+              onSetLayerPreference={setLayerPreference}
+              dateRange={dateRange}
+            />
+          )}
         />
 
         <div className="space-y-shell-lg">
@@ -111,16 +149,6 @@ export default function CaseWorkspaceShell({
             ref={graphWorkspaceRef}
             {...graphWorkspaceProps}
           />
-
-          <div className="space-y-shell-md">
-            <TimelineBar
-              caseData={caseData}
-              activeEvidenceLabel={activeEvidenceLabel}
-              selectedNodeLabel={selectedNodeLabel}
-              highlightedCount={highlightedEntityIds.length}
-            />
-            <AICommandBar />
-          </div>
 
           <section className="grid gap-shell-lg xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-lg">
@@ -234,7 +262,23 @@ export default function CaseWorkspaceShell({
             </div>
           </section>
 
+          <div className="space-y-shell-md">
+            <TimelineBar
+              caseData={caseData}
+              activeEvidenceLabel={activeEvidenceLabel}
+              selectedNodeLabel={selectedNodeLabel}
+              highlightedCount={highlightedEntityIds.length}
+            />
+            <AICommandBar />
+          </div>
         </div>
+
+        <WorkspaceAnalysisPanel
+          caseData={caseData}
+          selectedNode={selectedNode}
+          highlightedNodeIds={highlightedEntityIds}
+          onDismiss={() => onSelectNode(null)}
+        />
       </div>
 
       <EntityModal
