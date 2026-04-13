@@ -14,6 +14,8 @@ export interface CameraState3D {
   rotX: number;
   rotY: number;
   zoom: number;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export interface Viewport3D {
@@ -59,8 +61,8 @@ function projectCartesian(
   const scale = fov / (fov + depth + 500);
 
   return {
-    sx: viewport.width / 2 + (tx * scale),
-    sy: viewport.height / 2 - (ty * scale),
+    sx: viewport.width / 2 + (camera.offsetX ?? 0) + (tx * scale),
+    sy: viewport.height / 2 + (camera.offsetY ?? 0) - (ty * scale),
     scale,
     depth,
   };
@@ -148,4 +150,3 @@ export function projectNodes3D(
 ): ProjectedNode3D[] {
   return nodes.map((node) => projectNode3D(node, camera, viewport));
 }
-

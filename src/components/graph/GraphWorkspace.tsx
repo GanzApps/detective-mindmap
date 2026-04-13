@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, { type ForceGraph2DExportHandle } from '@/components/graph/ForceGraph2D';
 import GraphMinimap from '@/components/graph/GraphMinimap';
 import { type GraphMinimapState } from '@/components/graph/graphMinimapTypes';
@@ -155,20 +155,32 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
     ),
   }), [viewMode]);
 
-  function handleSelectNode(nodeId: string | null) {
+  const handleSelectNode = useCallback((nodeId: string | null) => {
     if (nodeId === null) {
       setCommittedSearchNodeId(null);
     }
 
     onSelectNode(nodeId);
-  }
+  }, [onSelectNode]);
 
-  function handleCommitSearchSelection(nodeId: string) {
+  const handleCommitSearchSelection = useCallback((nodeId: string) => {
     const match = caseData.graph.nodes.find((node) => node.id === nodeId);
     setCommittedSearchNodeId(nodeId);
-    setSearchQuery(match?.label ?? searchQuery);
+    setSearchQuery(match?.label ?? '');
     onSelectNode(nodeId);
-  }
+  }, [caseData.graph.nodes, onSelectNode]);
+
+  const handle2DMinimapStateChange = useCallback((nextState: GraphMinimapState) => {
+    if (viewMode === '2d') {
+      setMinimapState(nextState);
+    }
+  }, [viewMode]);
+
+  const handle3DMinimapStateChange = useCallback((nextState: GraphMinimapState) => {
+    if (viewMode === '3d') {
+      setMinimapState(nextState);
+    }
+  }, [viewMode]);
 
   return (
     <div data-testid="graph-workspace" className="relative">
@@ -233,11 +245,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             onSearchQueryChange={setSearchQuery}
             onCommitSearchSelection={handleCommitSearchSelection}
             onSelectNode={handleSelectNode}
-            onMinimapStateChange={(nextState) => {
-              if (viewMode === '2d') {
-                setMinimapState(nextState);
-              }
-            }}
+            onMinimapStateChange={handle2DMinimapStateChange}
           />
         </div>
         <div
@@ -254,11 +262,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '3d'}
             onSelectNode={handleSelectNode}
-            onMinimapStateChange={(nextState) => {
-              if (viewMode === '3d') {
-                setMinimapState(nextState);
-              }
-            }}
+            onMinimapStateChange={handle3DMinimapStateChange}
           />
         </div>
 

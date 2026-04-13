@@ -17,7 +17,7 @@ describe('MindMap3D', () => {
     expect(html).toContain('MindMap3D');
     expect(html).toContain('Reset');
     expect(html).toContain('Pause');
-    expect(html).toContain('Drag to rotate');
+    expect(html).toContain('Left drag to rotate');
     expect(html).not.toContain('Explore topic');
   });
 });

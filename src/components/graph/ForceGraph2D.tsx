@@ -98,6 +98,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const edgesRef = useRef<ForceGraphEdgeDatum[]>([]);
   const transformRef = useRef<ZoomTransform>(zoomIdentity);
   const animationFrameRef = useRef<number | null>(null);
+  const resizeCanvasRef = useRef<(() => void) | null>(null);
   const selectedNodeIdRef = useRef<string | null>(selectedNodeId);
   const highlightedNodeIdsRef = useRef<string[]>(highlightedNodeIds);
   const activeEntityTypesRef = useRef<EntityType[]>(activeEntityTypes);
@@ -107,6 +108,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const focusSelectedNeighborhoodRef = useRef(focusSelectedNeighborhood);
   const hoverNodeIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<PointerState>({ x: 0, y: 0 });
+  const pointerButtonRef = useRef<number>(0);
   const dragActivatedRef = useRef(false);
   const userAdjustedViewportRef = useRef(false);
   const viewportRef = useRef({ width: 0, height: 0, dpr: 1 });
@@ -308,6 +310,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
   useEffect(() => {
     if (isActive) {
+      resizeCanvasRef.current?.();
       scheduleDraw();
       emitMinimapState();
     }
@@ -347,8 +350,16 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       }
     };
 
+    resizeCanvasRef.current = resizeCanvas;
+
     const zoomBehavior = zoom<HTMLCanvasElement, unknown>()
-      .filter((event) => !event.button && (!event.ctrlKey || event.type === 'wheel'))
+      .filter((event: MouseEvent | WheelEvent) => {
+        if (event.type === 'wheel') {
+          return !event.ctrlKey;
+        }
+
+        return event.button === 0 || event.button === 2;
+      })
       .scaleExtent([0.45, 2.5])
       .on('zoom', (event: D3ZoomEvent<HTMLCanvasElement, unknown>) => {
         transformRef.current = event.transform;
@@ -361,7 +372,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     zoomBehaviorRef.current = zoomBehavior;
 
     const dragBehavior: any = drag<HTMLCanvasElement, unknown>()
-      .filter((event: MouseEvent) => !event.button)
+      .filter((event: MouseEvent) => event.button === 0)
       .subject((event: MouseEvent) => hitTest2D(nodesRef.current, event.x, event.y, transformRef.current))
       .on('start', (event: any, subject: any) => {
         if (!subject) {
@@ -420,6 +431,9 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     selection
       .call(zoomBehavior)
       .call(dragBehavior)
+      .on('contextmenu.force-graph', (event: MouseEvent) => {
+        event.preventDefault();
+      })
       .on('mousemove.force-graph', (event: MouseEvent) => {
         const [x, y] = pointer(event, canvas);
         const hit = hitTest2D(nodesRef.current, x, y, transformRef.current);
@@ -437,9 +451,14 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       .on('mousedown.force-graph', (event: MouseEvent) => {
         const [x, y] = pointer(event, canvas);
         pointerDownRef.current = { x, y };
+        pointerButtonRef.current = event.button;
         dragActivatedRef.current = false;
       })
-      .on('mouseup.force-graph', (event: MouseEvent) => {
+      .on('click.force-graph', (event: MouseEvent) => {
+        if (pointerButtonRef.current !== 0) {
+          return;
+        }
+
         const [x, y] = pointer(event, canvas);
         const travel = Math.hypot(x - pointerDownRef.current.x, y - pointerDownRef.current.y);
 
@@ -470,6 +489,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       selection.on('.force-graph', null);
       d3SelectionRef.current = null;
       zoomBehaviorRef.current = null;
+      resizeCanvasRef.current = null;
     };
   }, [onMinimapStateChange, onSelectNode]);
 

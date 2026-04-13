@@ -41,13 +41,15 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
-  const cameraRef = useRef({ rotX: 0.28, rotY: 0.55, zoom: 1 });
+  const cameraRef = useRef({ rotX: 0.28, rotY: 0.55, zoom: 1, offsetX: 0, offsetY: 0 });
   const viewportRef = useRef({ width: 0, height: 0 });
   const frameRef = useRef<ReturnType<typeof drawFrame3D> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const resizeCanvasRef = useRef<(() => void) | null>(null);
   const autoRotateRef = useRef(true);
   const draggingRef = useRef(false);
   const dragMovedRef = useRef(false);
+  const dragModeRef = useRef<'rotate' | 'pan' | null>(null);
   const pointerRef = useRef({ x: 0, y: 0 });
   const needsRedrawRef = useRef(true);
   const hoverNodeIdRef = useRef<string | null>(null);
@@ -73,8 +75,18 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     const zoom = cameraRef.current.zoom;
     const viewportWidth = clamp(0.82 / zoom, 0.2, 0.9);
     const viewportHeight = clamp(0.82 / zoom, 0.2, 0.9);
-    const viewportX = clamp(((Math.sin(cameraRef.current.rotY) + 1) / 2) * (1 - viewportWidth), 0, 1 - viewportWidth);
-    const viewportY = clamp(((Math.sin(cameraRef.current.rotX) + 1) / 2) * (1 - viewportHeight), 0, 1 - viewportHeight);
+    const panX = cameraRef.current.offsetX / Math.max(viewportRef.current.width, 1);
+    const panY = cameraRef.current.offsetY / Math.max(viewportRef.current.height, 1);
+    const viewportX = clamp(
+      (((Math.sin(cameraRef.current.rotY) + 1) / 2) * (1 - viewportWidth)) - panX * 0.35,
+      0,
+      1 - viewportWidth,
+    );
+    const viewportY = clamp(
+      (((Math.sin(cameraRef.current.rotX) + 1) / 2) * (1 - viewportHeight)) - panY * 0.35,
+      0,
+      1 - viewportHeight,
+    );
 
     onMinimapStateChange({
       label: '3D',
@@ -200,7 +212,10 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
 
   useEffect(() => {
     if (isActive) {
+      resizeCanvasRef.current?.();
       needsRedrawRef.current = true;
+      drawCurrentFrame();
+      updateTooltip();
       emitMinimapState();
     }
   }, [isActive]);
@@ -234,6 +249,8 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       needsRedrawRef.current = true;
     }
 
+    resizeCanvasRef.current = resizeCanvas;
+
     resizeCanvas();
 
     const resizeObserver = new ResizeObserver(() => {
@@ -241,6 +258,19 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     });
 
     resizeObserver.observe(wrapperElement);
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      cameraRef.current.zoom = clamp(
+        cameraRef.current.zoom - event.deltaY * 0.0008,
+        0.3,
+        3.5,
+      );
+      needsRedrawRef.current = true;
+      emitMinimapState();
+    };
+
+    canvasElement.addEventListener('wheel', handleWheel, { passive: false });
 
     let running = true;
 
@@ -271,12 +301,15 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         window.cancelAnimationFrame(animationFrameRef.current);
       }
       resizeObserver.disconnect();
+      canvasElement.removeEventListener('wheel', handleWheel);
+      resizeCanvasRef.current = null;
     };
   }, [graph, onMinimapStateChange]);
 
   useEffect(() => {
     function handleMouseUp() {
       draggingRef.current = false;
+      dragModeRef.current = null;
     }
 
     window.addEventListener('mouseup', handleMouseUp);
@@ -326,9 +359,13 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         <canvas
           ref={canvasRef}
           className="block h-full w-full cursor-grab active:cursor-grabbing"
+          onContextMenu={(event) => {
+            event.preventDefault();
+          }}
           onMouseDown={(event) => {
             draggingRef.current = true;
             dragMovedRef.current = false;
+            dragModeRef.current = event.button === 2 ? 'pan' : 'rotate';
             pointerRef.current = { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY };
           }}
           onMouseMove={(event) => {
@@ -345,8 +382,13 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               dragMovedRef.current = true;
             }
 
-            cameraRef.current.rotY += deltaX * 0.008;
-            cameraRef.current.rotX += deltaY * 0.008;
+            if (dragModeRef.current === 'pan') {
+              cameraRef.current.offsetX += deltaX;
+              cameraRef.current.offsetY += deltaY;
+            } else {
+              cameraRef.current.rotY += deltaX * 0.008;
+              cameraRef.current.rotX += deltaY * 0.008;
+            }
             autoRotateRef.current = false;
             setAutoRotateEnabled(false);
             needsRedrawRef.current = true;
@@ -392,16 +434,6 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
             needsRedrawRef.current = true;
             emitMinimapState();
           }}
-          onWheel={(event) => {
-            event.preventDefault();
-            cameraRef.current.zoom = clamp(
-              cameraRef.current.zoom - event.deltaY * 0.0008,
-              0.3,
-              3.5,
-            );
-            needsRedrawRef.current = true;
-            emitMinimapState();
-          }}
         />
         <div
           ref={tooltipRef}
@@ -411,7 +443,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
           <button
             type="button"
             onClick={() => {
-              cameraRef.current = { rotX: 0.28, rotY: 0.55, zoom: 1 };
+              cameraRef.current = { rotX: 0.28, rotY: 0.55, zoom: 1, offsetX: 0, offsetY: 0 };
               hoverNodeIdRef.current = null;
               onSelectNode(null);
               setAutoRotateEnabled(true);
@@ -435,7 +467,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
           </button>
         </div>
         <div className="absolute bottom-3 left-3 text-xs text-shell-text-muted">
-          Drag to rotate · Scroll to zoom · Click node to highlight
+          Left drag to rotate · Right drag to pan · Scroll to zoom · Click node to highlight
         </div>
       </div>
     </section>
