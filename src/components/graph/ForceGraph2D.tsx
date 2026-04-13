@@ -15,7 +15,6 @@ import {
 import {
   createForceSimulation,
   drawGraph2D,
-  getBestSearchMatch,
   getGraphBounds,
   getSearchMatches,
   hitTest2D,
@@ -65,11 +64,13 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   highlightedNodeIds: string[];
   activeEntityTypes?: EntityType[];
   searchQuery: string;
+  committedSearchNodeId: string | null;
   showEdgeLabels?: boolean;
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
   onSearchQueryChange: (value: string) => void;
+  onCommitSearchSelection: (nodeId: string) => void;
   onSelectNode: (nodeId: string | null) => void;
   onMinimapStateChange?: (state: GraphMinimapState) => void;
 }>(function ForceGraph2D({
@@ -78,11 +79,13 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   highlightedNodeIds,
   activeEntityTypes = ENTITY_FILTER_OPTIONS,
   searchQuery,
+  committedSearchNodeId,
   showEdgeLabels = true,
   showNodeLabels = true,
   focusSelectedNeighborhood = true,
   isActive,
   onSearchQueryChange,
+  onCommitSearchSelection,
   onSelectNode,
   onMinimapStateChange,
 }, ref) {
@@ -109,7 +112,19 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const viewportRef = useRef({ width: 0, height: 0, dpr: 1 });
 
   const searchMatches = useMemo(() => getSearchMatches(graph.nodes, searchQuery), [graph.nodes, searchQuery]);
-  const bestSearchMatchId = useMemo(() => getBestSearchMatch(graph.nodes, searchQuery)?.id ?? null, [graph.nodes, searchQuery]);
+  const visibleSearchMatches = useMemo(() => searchMatches.slice(0, 6), [searchMatches]);
+  const committedSearchNode = useMemo(
+    () => (committedSearchNodeId
+      ? graph.nodes.find((node) => node.id === committedSearchNodeId) ?? null
+      : null),
+    [committedSearchNodeId, graph.nodes],
+  );
+  const selectedNode = useMemo(
+    () => (selectedNodeId
+      ? graph.nodes.find((node) => node.id === selectedNodeId) ?? null
+      : null),
+    [graph.nodes, selectedNodeId],
+  );
 
   function emitMinimapState() {
     if (!onMinimapStateChange || nodesRef.current.length === 0) {
@@ -278,13 +293,18 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   }, [focusSelectedNeighborhood]);
 
   useEffect(() => {
-    searchMatchIdsRef.current = searchMatches.map((node) => node.id);
+    searchMatchIdsRef.current = [];
+    scheduleDraw();
+  }, [searchMatches]);
+
+  useEffect(() => {
+    searchMatchIdsRef.current = committedSearchNodeId ? [committedSearchNodeId] : [];
     scheduleDraw();
 
-    if (bestSearchMatchId) {
-      focusNode(bestSearchMatchId);
+    if (committedSearchNodeId) {
+      focusNode(committedSearchNodeId);
     }
-  }, [bestSearchMatchId, searchMatches]);
+  }, [committedSearchNodeId]);
 
   useEffect(() => {
     if (isActive) {
@@ -492,7 +512,8 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-[minmax(240px,320px)_auto]">
-          <label className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
+          <div className="relative">
+            <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
             <span className="text-xs uppercase tracking-[0.2em] text-shell-text-muted">Search nodes</span>
             <input
               type="text"
@@ -501,7 +522,37 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
               placeholder="Search nodes"
               className="mt-2 w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
             />
-          </label>
+            </label>
+            {searchQuery.trim() ? (
+              <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-shell-lg border border-shell-border bg-shell-surface shadow-shell-lg">
+                {visibleSearchMatches.length > 0 ? (
+                  <ul className="divide-y divide-shell-border">
+                    {visibleSearchMatches.map((node) => (
+                      <li key={node.id}>
+                        <button
+                          type="button"
+                          onClick={() => onCommitSearchSelection(node.id)}
+                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-shell-surface-raised"
+                        >
+                          <span>
+                            <span className="block text-sm font-medium text-shell-text-primary">{node.label}</span>
+                            <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-shell-text-muted">
+                              {node.type}
+                            </span>
+                          </span>
+                          <span className="text-xs text-shell-text-secondary">Focus</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-3 text-sm text-shell-text-secondary">
+                    No matching entities yet.
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -532,14 +583,16 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           </p>
           <p className="mt-2 text-sm text-shell-text-primary">
             {searchQuery.trim()
-              ? `${searchMatches.length} match${searchMatches.length === 1 ? '' : 'es'}`
+              ? `${searchMatches.length} suggestion${searchMatches.length === 1 ? '' : 's'}`
               : 'No search active'}
           </p>
           <p className="mt-1 text-xs text-shell-text-secondary">
-            {bestSearchMatchId
-              ? `Centered on ${graph.nodes.find((node) => node.id === bestSearchMatchId)?.label ?? 'best match'}`
-              : selectedNodeId
-                ? graph.nodes.find((node) => node.id === selectedNodeId)?.label ?? 'Selected node'
+            {committedSearchNode
+              ? `Focused on ${committedSearchNode.label}`
+              : searchQuery.trim()
+                ? 'Choose a result to focus the graph'
+                : selectedNode
+                  ? selectedNode.label
                 : 'Select a node to inspect it'}
           </p>
         </div>

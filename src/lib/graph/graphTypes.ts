@@ -51,12 +51,22 @@ export type GraphData = z.infer<typeof GraphDataSchema>;
 
 export const ENTITY_TYPE_COLOR: Record<EntityType, string> = {
   person: '#a78bfa',
-  organization: '#38bdf8',
+  organization: '#6366f1',
   location: '#34d399',
-  event: '#f472b6',
-  evidence: '#fbbf24',
-  vehicle: '#f87171',
-  digital: '#a3e635',
+  event: '#fb7185',
+  evidence: '#fb923c',
+  vehicle: '#06b6d4',
+  digital: '#3b82f6',
+};
+
+export const ENTITY_TYPE_SHAPE: Record<EntityType, 'avatar' | 'marker' | 'block' | 'card' | 'diamond' | 'capsule' | 'hex'> = {
+  person: 'avatar',
+  location: 'marker',
+  organization: 'block',
+  evidence: 'card',
+  event: 'diamond',
+  vehicle: 'capsule',
+  digital: 'hex',
 };
 
 export function getConnectedIds(edges: GraphEdge[], nodeId: string): Set<string> {

@@ -76,6 +76,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   onSelectNode,
 }, ref) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
   const fallbackMinimapState = useMemo(
     () => buildFallbackMinimapState(caseData.graph, viewMode, selectedNodeId),
     [caseData.graph, viewMode, selectedNodeId],
@@ -98,7 +99,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
 
   useEffect(() => {
     setSearchQuery('');
+    setCommittedSearchNodeId(null);
   }, [caseData.id]);
+
+  useEffect(() => {
+    if (selectedNodeId === null) {
+      setCommittedSearchNodeId(null);
+    }
+  }, [selectedNodeId]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -146,6 +154,21 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
         : mindMapRef.current?.captureDataUrl() ?? null
     ),
   }), [viewMode]);
+
+  function handleSelectNode(nodeId: string | null) {
+    if (nodeId === null) {
+      setCommittedSearchNodeId(null);
+    }
+
+    onSelectNode(nodeId);
+  }
+
+  function handleCommitSearchSelection(nodeId: string) {
+    const match = caseData.graph.nodes.find((node) => node.id === nodeId);
+    setCommittedSearchNodeId(nodeId);
+    setSearchQuery(match?.label ?? searchQuery);
+    onSelectNode(nodeId);
+  }
 
   return (
     <div data-testid="graph-workspace" className="relative">
@@ -202,12 +225,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             highlightedNodeIds={highlightedNodeIds}
             activeEntityTypes={activeEntityTypes}
             searchQuery={searchQuery}
+            committedSearchNodeId={committedSearchNodeId}
             showEdgeLabels={layerPreferences.showEdgeLabels}
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '2d'}
             onSearchQueryChange={setSearchQuery}
-            onSelectNode={onSelectNode}
+            onCommitSearchSelection={handleCommitSearchSelection}
+            onSelectNode={handleSelectNode}
             onMinimapStateChange={(nextState) => {
               if (viewMode === '2d') {
                 setMinimapState(nextState);
@@ -228,7 +253,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '3d'}
-            onSelectNode={onSelectNode}
+            onSelectNode={handleSelectNode}
             onMinimapStateChange={(nextState) => {
               if (viewMode === '3d') {
                 setMinimapState(nextState);

@@ -1,4 +1,9 @@
-import { type EntityType, type GraphData } from '@/lib/graph/graphTypes';
+import {
+  ENTITY_TYPE_COLOR,
+  ENTITY_TYPE_SHAPE,
+  type EntityType,
+  type GraphData,
+} from '@/lib/graph/graphTypes';
 import {
   buildMindMap3DLayout,
   projectNodes3D,
@@ -26,13 +31,106 @@ interface FramePreparation {
   activeEntityTypes: Set<EntityType> | null;
 }
 
-const TIER_COLORS = {
-  0: { fill: '#a78bfa', glow: '167,139,250', line: '167,139,250' },
-  1: { fill: '#38bdf8', glow: '56,189,248', line: '56,189,248' },
-  2: { fill: '#f472b6', glow: '244,114,182', line: '244,114,182' },
-  3: { fill: '#34d399', glow: '52,211,153', line: '52,211,153' },
-  4: { fill: '#fbbf24', glow: '251,191,36', line: '251,191,36' },
-} as const;
+function hexToRgb(hex: string) {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized;
+
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function rgbaFromHex(hex: string, alpha: number) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const clamped = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + clamped, y);
+  ctx.arcTo(x + width, y, x + width, y + height, clamped);
+  ctx.arcTo(x + width, y + height, x, y + height, clamped);
+  ctx.arcTo(x, y + height, x, y, clamped);
+  ctx.arcTo(x, y, x + width, y, clamped);
+  ctx.closePath();
+}
+
+function drawProjectedNodeShape(
+  ctx: CanvasRenderingContext2D,
+  shape: typeof ENTITY_TYPE_SHAPE[keyof typeof ENTITY_TYPE_SHAPE],
+  x: number,
+  y: number,
+  radius: number,
+) {
+  switch (shape) {
+    case 'marker':
+      ctx.beginPath();
+      ctx.moveTo(x, y + radius * 1.18);
+      ctx.bezierCurveTo(
+        x + radius * 1.02,
+        y + radius * 0.62,
+        x + radius * 1.02,
+        y - radius * 0.64,
+        x,
+        y - radius * 0.98,
+      );
+      ctx.bezierCurveTo(
+        x - radius * 1.02,
+        y - radius * 0.64,
+        x - radius * 1.02,
+        y + radius * 0.62,
+        x,
+        y + radius * 1.18,
+      );
+      ctx.closePath();
+      break;
+    case 'block':
+      drawRoundedRect(ctx, x - radius, y - radius, radius * 2, radius * 2, radius * 0.3);
+      break;
+    case 'card':
+      drawRoundedRect(ctx, x - radius * 1.08, y - radius * 0.84, radius * 2.16, radius * 1.68, radius * 0.26);
+      break;
+    case 'diamond':
+      ctx.beginPath();
+      ctx.moveTo(x, y - radius);
+      ctx.lineTo(x + radius, y);
+      ctx.lineTo(x, y + radius);
+      ctx.lineTo(x - radius, y);
+      ctx.closePath();
+      break;
+    case 'capsule':
+      drawRoundedRect(ctx, x - radius * 1.15, y - radius * 0.68, radius * 2.3, radius * 1.36, radius * 0.64);
+      break;
+    case 'hex':
+      ctx.beginPath();
+      ctx.moveTo(x - radius * 0.95, y);
+      ctx.lineTo(x - radius * 0.48, y - radius * 0.84);
+      ctx.lineTo(x + radius * 0.48, y - radius * 0.84);
+      ctx.lineTo(x + radius * 0.95, y);
+      ctx.lineTo(x + radius * 0.48, y + radius * 0.84);
+      ctx.lineTo(x - radius * 0.48, y + radius * 0.84);
+      ctx.closePath();
+      break;
+    case 'avatar':
+    default:
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      break;
+  }
+}
 
 function getConnectedNodeIds(graph: GraphData, selectedNodeId: string | null | undefined) {
   if (!selectedNodeId) {
@@ -52,10 +150,6 @@ function getConnectedNodeIds(graph: GraphData, selectedNodeId: string | null | u
   }
 
   return result;
-}
-
-function getTierPalette(tier: number) {
-  return TIER_COLORS[tier as keyof typeof TIER_COLORS] ?? TIER_COLORS[4];
 }
 
 export function prepareFrame3D(
@@ -126,14 +220,16 @@ export function drawFrame3D(
       ctx.strokeStyle = 'rgba(255,255,255,0.03)';
       ctx.lineWidth = 0.5;
     } else if (isConnected) {
+      const sourceColor = ENTITY_TYPE_COLOR[source.node.type];
+      const targetColor = ENTITY_TYPE_COLOR[target.node.type];
       const gradient = ctx.createLinearGradient(source.sx, source.sy, target.sx, target.sy);
-      gradient.addColorStop(0, `rgba(${getTierPalette(source.tier).line},0.9)`);
-      gradient.addColorStop(1, `rgba(${getTierPalette(target.tier).line},0.9)`);
+      gradient.addColorStop(0, rgbaFromHex(sourceColor, 0.88));
+      gradient.addColorStop(1, rgbaFromHex(targetColor, 0.88));
       ctx.strokeStyle = gradient;
       ctx.lineWidth = 1.6;
     } else {
       const depth = Math.max(0, Math.min(1, (source.depth + target.depth) / 1200 + 0.5));
-      ctx.strokeStyle = `rgba(${getTierPalette(source.tier).line},${0.07 + depth * 0.15})`;
+      ctx.strokeStyle = rgbaFromHex(ENTITY_TYPE_COLOR[source.node.type], 0.07 + depth * 0.15);
       ctx.lineWidth = 0.7;
     }
 
@@ -142,7 +238,6 @@ export function drawFrame3D(
   }
 
   for (const node of prepared.sortedNodes) {
-    const palette = getTierPalette(node.tier);
     const isSelected = options.selectedNodeId === node.id;
     const isConnected = prepared.connectedNodeIds?.has(node.id) ?? false;
     const isFilteredOut = prepared.activeEntityTypes !== null
@@ -154,14 +249,14 @@ export function drawFrame3D(
 
     if (isDimmed) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.radius, 0, Math.PI * 2);
+      drawProjectedNodeShape(ctx, ENTITY_TYPE_SHAPE[node.node.type], node.sx, node.sy, node.radius);
       ctx.fillStyle = 'rgba(255,255,255,0.03)';
       ctx.fill();
       ctx.restore();
       continue;
     }
 
+    const semanticColor = ENTITY_TYPE_COLOR[node.node.type];
     const glowRadius = isSelected
       ? node.radius * 4.8
       : isConnected
@@ -183,8 +278,8 @@ export function drawFrame3D(
         glowRadius,
       );
       const glowAlpha = isSelected ? 0.6 : isConnected ? 0.32 : 0.22;
-      gradient.addColorStop(0, `rgba(${palette.glow},${glowAlpha})`);
-      gradient.addColorStop(1, `rgba(${palette.glow},0)`);
+      gradient.addColorStop(0, rgbaFromHex(semanticColor, glowAlpha));
+      gradient.addColorStop(1, rgbaFromHex(semanticColor, 0));
       ctx.beginPath();
       ctx.arc(node.sx, node.sy, glowRadius, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
@@ -193,20 +288,27 @@ export function drawFrame3D(
     }
 
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(node.sx, node.sy, node.radius, 0, Math.PI * 2);
-    ctx.fillStyle = palette.fill;
+    drawProjectedNodeShape(ctx, ENTITY_TYPE_SHAPE[node.node.type], node.sx, node.sy, node.radius);
+    ctx.fillStyle = rgbaFromHex(semanticColor, isSelected || isConnected || isHighlighted ? 0.18 : 0.12);
     ctx.globalAlpha = isSelected || isConnected || isHighlighted
       ? 1
       : Math.max(0.35, 0.45 + node.depth / 700);
     ctx.fill();
+    ctx.strokeStyle = semanticColor;
+    ctx.lineWidth = isSelected ? 2.4 : isConnected || isHighlighted ? 1.6 : 1.15;
+    ctx.stroke();
     ctx.restore();
 
     if (isSelected || isConnected || isHighlighted) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.radius + (isSelected ? 1.5 : 0.5), 0, Math.PI * 2);
-      ctx.strokeStyle = palette.fill;
+      drawProjectedNodeShape(
+        ctx,
+        ENTITY_TYPE_SHAPE[node.node.type],
+        node.sx,
+        node.sy,
+        node.radius + (isSelected ? 2 : 1),
+      );
+      ctx.strokeStyle = rgbaFromHex(semanticColor, isSelected ? 0.9 : 0.68);
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.stroke();
       ctx.restore();
@@ -218,15 +320,30 @@ export function drawFrame3D(
         ? 1
         : Math.max(0.3, 0.35 + node.depth / 800);
       const lines = node.label.split('\n');
+      const longestLine = lines.reduce((max, line) => Math.max(max, line.length), 0);
+      const chipWidth = Math.max(node.radius * 2.1, longestLine * fontSize * 0.56 + 18);
+      const chipHeight = lines.length * (fontSize + 2) + 10;
+      const chipX = node.sx + node.radius + 8;
+      const chipY = node.sy - chipHeight / 2;
 
       ctx.save();
       ctx.font = `${node.tier <= 1 ? '500' : '400'} ${fontSize}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = `rgba(210,225,255,${alpha})`;
+      drawRoundedRect(ctx, chipX, chipY, chipWidth, chipHeight, 10);
+      ctx.fillStyle = rgbaFromHex('#ffffff', 0.84 * alpha);
+      ctx.fill();
+      ctx.strokeStyle = rgbaFromHex(semanticColor, 0.88 * alpha);
+      ctx.lineWidth = isSelected ? 1.4 : 1;
+      ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(15,23,42,${alpha})`;
 
       lines.forEach((line, index) => {
-        ctx.fillText(line, node.sx, node.sy + node.radius + 4 + index * (fontSize + 2));
+        ctx.fillText(
+          line,
+          chipX + 10,
+          chipY + 8 + index * (fontSize + 2) + fontSize / 2,
+        );
       });
       ctx.restore();
     }

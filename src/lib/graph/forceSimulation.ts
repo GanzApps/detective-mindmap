@@ -13,6 +13,7 @@ import {
 } from 'd3';
 import {
   ENTITY_TYPE_COLOR,
+  ENTITY_TYPE_SHAPE,
   type EntityType,
   type GraphEdge,
   type GraphNode,
@@ -22,6 +23,7 @@ export interface ForceGraphNodeDatum extends GraphNode, SimulationNodeDatum {
   radius: number;
   color: string;
   glyph: string;
+  shape: 'avatar' | 'marker' | 'block' | 'card' | 'diamond' | 'capsule' | 'hex';
   x: number;
   y: number;
   fx?: number | null;
@@ -75,10 +77,28 @@ const ENTITY_TYPE_GLYPH: Record<EntityType, string> = {
   organization: 'O',
   location: 'L',
   event: 'E',
-  evidence: 'X',
+  evidence: '$',
   vehicle: 'V',
   digital: 'D',
 };
+
+function hexToRgb(hex: string) {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized;
+
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function rgbaFromHex(hex: string, alpha: number) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -87,17 +107,17 @@ function clamp(value: number, min: number, max: number) {
 function getNodeRadius(node: GraphNode) {
   switch (node.type) {
     case 'organization':
-      return 28;
+      return 24;
     case 'event':
       return 22;
     case 'location':
-      return 21;
+      return 20;
     case 'vehicle':
-      return 18;
+      return 20;
     case 'digital':
-      return 17;
+      return 19;
     case 'evidence':
-      return 16;
+      return 22;
     case 'person':
     default:
       return 20;
@@ -180,6 +200,7 @@ export function createForceSimulation(
       radius: getNodeRadius(node),
       color: ENTITY_TYPE_COLOR[node.type],
       glyph: ENTITY_TYPE_GLYPH[node.type],
+      shape: ENTITY_TYPE_SHAPE[node.type],
       x: position.x,
       y: position.y,
     };
@@ -376,17 +397,34 @@ export function drawGraph2D(
   }
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#040712';
+  ctx.fillStyle = '#f8fafc';
   ctx.fillRect(0, 0, width, height);
 
   if (typeof ctx.createRadialGradient === 'function') {
-    const glow = ctx.createRadialGradient(width * 0.32, height * 0.16, 10, width * 0.32, height * 0.16, width * 0.72);
-    glow.addColorStop(0, 'rgba(34,211,238,0.12)');
-    glow.addColorStop(0.35, 'rgba(14,165,233,0.06)');
-    glow.addColorStop(1, 'rgba(2,6,23,0)');
+    const glow = ctx.createRadialGradient(width * 0.35, height * 0.18, 10, width * 0.35, height * 0.18, width * 0.75);
+    glow.addColorStop(0, 'rgba(124,58,237,0.08)');
+    glow.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+    glow.addColorStop(1, 'rgba(248,250,252,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
   }
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+  ctx.lineWidth = 1;
+  for (let x = 24; x < width; x += 28) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  for (let y = 24; y < height; y += 28) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 
   ctx.save();
   ctx.translate(transform.x, transform.y);
@@ -410,13 +448,15 @@ export function drawGraph2D(
     ctx.moveTo(source.x, source.y);
     ctx.lineTo(target.x, target.y);
     ctx.strokeStyle = isSelectedEdge
-      ? 'rgba(125,211,252,0.92)'
+      ? rgbaFromHex(source.color, 0.9)
       : isEmphasized
-        ? 'rgba(251,191,36,0.6)'
-        : 'rgba(71,85,105,0.5)';
-    ctx.lineWidth = isSelectedEdge ? 2.5 : isEmphasized ? 1.8 : 1.15;
-    ctx.globalAlpha = isDimmed ? 0.18 : 1;
+        ? rgbaFromHex(target.color, 0.54)
+        : 'rgba(148,163,184,0.45)';
+    ctx.lineWidth = isSelectedEdge ? 2.4 : isEmphasized ? 1.7 : 1.1;
+    ctx.setLineDash(isSelectedEdge ? [8, 4] : []);
+    ctx.globalAlpha = isDimmed ? 0.14 : 1;
     ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
 
     if (visibleEdgeLabels.has(edge.id)) {
@@ -429,7 +469,7 @@ export function drawGraph2D(
       ctx.save();
       ctx.translate(midpointX, midpointY);
       ctx.rotate(angle);
-      ctx.fillStyle = isSelectedEdge ? 'rgba(224,242,254,0.92)' : 'rgba(203,213,225,0.72)';
+      ctx.fillStyle = isSelectedEdge ? 'rgba(51,65,85,0.92)' : 'rgba(71,85,105,0.7)';
       ctx.font = `${isSelectedEdge ? 13 : 12}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
@@ -456,39 +496,56 @@ export function drawGraph2D(
 
     if (isSelected || isEmphasized) {
       ctx.beginPath();
-      ctx.fillStyle = isSelected ? 'rgba(34,211,238,0.2)' : 'rgba(251,191,36,0.14)';
-      ctx.arc(node.x, node.y, ringRadius + 8, 0, Math.PI * 2);
+      ctx.fillStyle = rgbaFromHex(node.color, isSelected ? 0.18 : 0.12);
+      ctx.arc(node.x, node.y, ringRadius + 9, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    ctx.beginPath();
-    ctx.fillStyle = node.color;
-    ctx.shadowColor = isSelected ? 'rgba(34,211,238,0.55)' : 'rgba(15,23,42,0.38)';
-    ctx.shadowBlur = isSelected ? 26 : 16;
-    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.fillStyle = rgbaFromHex(node.color, isSelected ? 0.22 : 0.15);
+    ctx.shadowColor = isSelected ? rgbaFromHex(node.color, 0.42) : 'rgba(148,163,184,0.18)';
+    ctx.shadowBlur = isSelected ? 22 : 10;
+    drawNodeShape(ctx, node, node.radius + (node.shape === 'marker' ? 2 : 0));
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    ctx.beginPath();
     ctx.lineWidth = isSelected ? 3 : isInNeighborhood ? 2 : 1.5;
-    ctx.strokeStyle = isSelected ? 'rgba(224,242,254,0.98)' : isInNeighborhood ? 'rgba(125,211,252,0.72)' : 'rgba(255,255,255,0.14)';
-    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = isSelected
+      ? rgbaFromHex(node.color, 0.95)
+      : isInNeighborhood
+        ? rgbaFromHex(node.color, 0.72)
+        : rgbaFromHex(node.color, 0.5);
+    drawNodeShape(ctx, node, node.radius);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(248,250,252,0.96)';
-    ctx.font = `${node.radius * 0.65}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(51,65,85,0.95)';
+    ctx.font = `${node.radius * 0.62}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(node.glyph, node.x, node.y + 0.5);
+    const glyphY = node.shape === 'marker' ? node.y - node.radius * 0.15 : node.y + 0.5;
+    ctx.fillText(node.glyph, node.x, glyphY);
 
     const showNodeLabel = (options.showNodeLabels ?? true)
-      && (transform.k >= 0.9 || isSelected || isInNeighborhood || isEmphasized);
+      && (transform.k >= 0.82 || isSelected || isInNeighborhood || isEmphasized);
     if (showNodeLabel) {
-      ctx.fillStyle = isSelected ? 'rgba(255,255,255,0.98)' : 'rgba(226,232,240,0.86)';
-      ctx.font = `${isSelected ? 14 : 12}px ui-sans-serif, system-ui, sans-serif`;
+      const chipX = node.x + node.radius + 10;
+      const chipY = node.y - 14;
+      const fontSize = isSelected ? 13 : 12;
+      ctx.font = `${isSelected ? 600 : 500} ${fontSize}px ui-sans-serif, system-ui, sans-serif`;
+      const textWidth = ctx.measureText(node.label).width;
+      const chipWidth = textWidth + 20;
+      const chipHeight = 28;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.strokeStyle = rgbaFromHex(node.color, isSelected ? 0.88 : 0.65);
+      ctx.lineWidth = 1.4;
+      drawRoundedRect(ctx, chipX, chipY, chipWidth, chipHeight, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(51,65,85,0.96)';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(node.label, node.x + node.radius + 12, node.y);
+      ctx.fillText(node.label, chipX + 10, chipY + chipHeight / 2);
     }
 
     ctx.restore();
@@ -510,4 +567,91 @@ function getConnectedNodeIds(edges: ForceGraphEdgeDatum[], nodeId: string) {
   }
 
   return result;
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawNodeShape(
+  ctx: CanvasRenderingContext2D,
+  node: Pick<ForceGraphNodeDatum, 'x' | 'y' | 'radius' | 'shape'>,
+  radius: number,
+) {
+  switch (node.shape) {
+    case 'block': {
+      drawRoundedRect(ctx, node.x - radius, node.y - radius * 0.8, radius * 2, radius * 1.6, radius * 0.28);
+      return;
+    }
+    case 'card': {
+      const x = node.x - radius * 0.88;
+      const y = node.y - radius * 1.02;
+      const width = radius * 1.76;
+      const height = radius * 2.04;
+      drawRoundedRect(ctx, x, y, width, height, radius * 0.22);
+      ctx.moveTo(x + width * 0.72, y);
+      ctx.lineTo(x + width, y + height * 0.28);
+      ctx.lineTo(x + width * 0.72, y + height * 0.28);
+      ctx.closePath();
+      return;
+    }
+    case 'diamond': {
+      ctx.beginPath();
+      ctx.moveTo(node.x, node.y - radius);
+      ctx.lineTo(node.x + radius, node.y);
+      ctx.lineTo(node.x, node.y + radius);
+      ctx.lineTo(node.x - radius, node.y);
+      ctx.closePath();
+      return;
+    }
+    case 'marker': {
+      const topRadius = radius * 0.78;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y - radius * 0.18, topRadius, Math.PI * 0.08, Math.PI * 0.92, true);
+      ctx.quadraticCurveTo(node.x - radius * 0.68, node.y + radius * 0.18, node.x, node.y + radius * 1.08);
+      ctx.quadraticCurveTo(node.x + radius * 0.68, node.y + radius * 0.18, node.x + topRadius, node.y - radius * 0.18);
+      ctx.closePath();
+      return;
+    }
+    case 'capsule': {
+      drawRoundedRect(ctx, node.x - radius * 1.05, node.y - radius * 0.62, radius * 2.1, radius * 1.24, radius * 0.58);
+      return;
+    }
+    case 'hex': {
+      const width = radius * 0.92;
+      const height = radius * 0.78;
+      ctx.beginPath();
+      ctx.moveTo(node.x - width * 0.55, node.y - height);
+      ctx.lineTo(node.x + width * 0.55, node.y - height);
+      ctx.lineTo(node.x + width, node.y);
+      ctx.lineTo(node.x + width * 0.55, node.y + height);
+      ctx.lineTo(node.x - width * 0.55, node.y + height);
+      ctx.lineTo(node.x - width, node.y);
+      ctx.closePath();
+      return;
+    }
+    case 'avatar':
+    default: {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    }
+  }
 }

@@ -10,8 +10,10 @@ describe('ForceGraph2D', () => {
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002', 'node-007']}
         searchQuery="marco"
+        committedSearchNodeId={null}
         isActive
         onSearchQueryChange={() => {}}
+        onCommitSearchSelection={() => {}}
         onSelectNode={() => {}}
       />,
     );
@@ -20,7 +22,8 @@ describe('ForceGraph2D', () => {
     expect(html).toContain('Search nodes');
     expect(html).toContain('Zoom to Fit');
     expect(html).toContain('Drag nodes to reposition');
-    expect(html).toContain('Centered on Marco Delgado');
-    expect(html).not.toContain('Selected node');
+    expect(html).toContain('1 suggestion');
+    expect(html).toContain('Choose a result to focus the graph');
+    expect(html).toContain('Marco Delgado');
   });
 });
