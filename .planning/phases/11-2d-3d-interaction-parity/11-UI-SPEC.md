@@ -58,13 +58,13 @@ Phase 11 adds no new UI chrome. Typography is for canvas-rendered labels only (n
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px | 400 | 1.5 | Node label text in 2D canvas (existing) |
-| Label | 12px | 400 | 1.4 | Edge label text, compact canvas annotations |
+| Label | 12px | 400 | 1.4 | Edge label text, compact canvas annotations, 3D node labels |
 | Heading | 16px | 600 | 1.2 | Panel headings in HTML overlay surfaces |
 | Display | 20px | 600 | 1.2 | Not used in Phase 11 |
 
 Canvas font string for 2D labels: `"400 14px ui-sans-serif, system-ui, sans-serif"` (matches shell system stack).
 Canvas font string for edge labels: `"400 12px ui-sans-serif, system-ui, sans-serif"`.
-Canvas font string for 3D node labels: `"400 13px ui-sans-serif, system-ui, sans-serif"` (slightly smaller, matches existing renderer3d.ts baseline).
+Canvas font string for 3D node labels: `"400 12px ui-sans-serif, system-ui, sans-serif"` (uses Label token — same as edge labels).
 
 Source: Tailwind config system stack default; Phase 11 CONTEXT.md (no typography changes introduced).
 
