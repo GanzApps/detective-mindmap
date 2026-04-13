@@ -108,6 +108,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const focusSelectedNeighborhoodRef = useRef(focusSelectedNeighborhood);
   const hoverNodeIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<PointerState>({ x: 0, y: 0 });
+  const clickOriginRef = useRef<PointerState>({ x: 0, y: 0 });
   const pointerButtonRef = useRef<number>(0);
   const dragActivatedRef = useRef(false);
   const userAdjustedViewportRef = useRef(false);
@@ -358,7 +359,16 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           return !event.ctrlKey;
         }
 
-        return event.button === 0 || event.button === 2;
+        // Right-click always pans.
+        // Left-click only pans on empty canvas space — not on nodes
+        // (so D3 drag can handle node interactions without being blocked
+        // by zoom's stopImmediatePropagation).
+        if ((event as MouseEvent).button === 2) return true;
+        if ((event as MouseEvent).button === 0) {
+          const [x, y] = pointer(event as MouseEvent, canvas);
+          return !hitTest2D(nodesRef.current, x, y, transformRef.current);
+        }
+        return false;
       })
       .scaleExtent([0.45, 2.5])
       .on('zoom', (event: D3ZoomEvent<HTMLCanvasElement, unknown>) => {
@@ -373,15 +383,18 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
     const dragBehavior: any = drag<HTMLCanvasElement, unknown>()
       .filter((event: MouseEvent) => event.button === 0)
+      .clickDistance(5)
       .subject((event: MouseEvent) => hitTest2D(nodesRef.current, event.x, event.y, transformRef.current))
       .on('start', (event: any, subject: any) => {
         if (!subject) {
           return;
         }
 
-        event.sourceEvent?.stopPropagation?.();
         dragActivatedRef.current = false;
+        pointerButtonRef.current = event.sourceEvent?.button ?? 0;
         pointerDownRef.current = { x: event.x, y: event.y };
+        const [sx, sy] = pointer(event.sourceEvent, canvas);
+        clickOriginRef.current = { x: sx, y: sy };
       })
       .on('drag', (event: any, subject: any) => {
         if (!subject) {
@@ -403,10 +416,11 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           }
         }
 
-        const worldX = (event.x - transformRef.current.x) / transformRef.current.k;
-        const worldY = (event.y - transformRef.current.y) / transformRef.current.k;
-        subject.fx = worldX;
-        subject.fy = worldY;
+        // Use actual screen position → world conversion (event.x/y in D3 drag
+        // are subject-relative, not raw screen coords, so we read the source event).
+        const [screenX, screenY] = pointer(event.sourceEvent, canvas);
+        subject.fx = (screenX - transformRef.current.x) / transformRef.current.k;
+        subject.fy = (screenY - transformRef.current.y) / transformRef.current.k;
         scheduleDraw();
         emitMinimapState();
       })
@@ -451,21 +465,15 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       .on('mousedown.force-graph', (event: MouseEvent) => {
         const [x, y] = pointer(event, canvas);
         pointerDownRef.current = { x, y };
+        clickOriginRef.current = { x, y };
         pointerButtonRef.current = event.button;
         dragActivatedRef.current = false;
       })
       .on('click.force-graph', (event: MouseEvent) => {
-        if (pointerButtonRef.current !== 0) {
-          return;
-        }
-
+        // D3 zoom suppresses clicks after panning (via yesdrag) and
+        // D3 drag suppresses clicks after node-dragging (via clickDistance).
+        // So any click that reaches here is a genuine tap — just hit-test and select.
         const [x, y] = pointer(event, canvas);
-        const travel = Math.hypot(x - pointerDownRef.current.x, y - pointerDownRef.current.y);
-
-        if (dragActivatedRef.current || travel >= 5) {
-          return;
-        }
-
         const hit = hitTest2D(nodesRef.current, x, y, transformRef.current);
 
         if (!hit) {
