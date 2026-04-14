@@ -127,163 +127,157 @@ export default function CaseWorkspaceShell({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-shell-lg">
-      <CaseHeader
-        caseData={caseData}
-        entityCount={caseData.graph.nodes.length}
-        connectionCount={caseData.graph.edges.length}
-        highlightedCount={highlightedEntityIds.length}
-        viewMode={viewMode}
-        onSetViewMode={onSetViewMode}
-        onOpenEntityModal={() => setShowEntityModal(true)}
-        onOpenConnectionModal={() => setShowConnectionModal(true)}
-        onClearHighlights={onClearHighlights}
-        onExport={onExport}
-        isExporting={isExporting}
-      />
-
-      <div className="grid gap-shell-lg xl:grid-cols-[320px_minmax(0,1fr)_320px]">
-        <EvidenceSidebar
-          evidence={caseData.evidence}
-          selectedEvidenceId={highlightedEvidenceId}
-          onEvidenceSelect={onSelectEvidence}
-          filtersPanel={(
-            <WorkspaceFiltersPanel
-              activeFilters={activeFilters}
-              typeCounts={typeCounts}
-              layerPreferences={layerPreferences}
-              onToggleEntityFilter={toggleEntityFilter}
-              onSetLayerPreference={setLayerPreference}
-              dateRange={dateRange}
-            />
-          )}
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      {/* 1. Toolbar — fixed height */}
+      <div className="shrink-0">
+        <CaseHeader
+          caseData={caseData}
+          entityCount={caseData.graph.nodes.length}
+          connectionCount={caseData.graph.edges.length}
+          highlightedCount={highlightedEntityIds.length}
+          viewMode={viewMode}
+          onSetViewMode={onSetViewMode}
+          onOpenEntityModal={() => setShowEntityModal(true)}
+          onOpenConnectionModal={() => setShowConnectionModal(true)}
+          onClearHighlights={onClearHighlights}
+          onExport={onExport}
+          isExporting={isExporting}
         />
+      </div>
 
-        <div className="space-y-shell-lg">
-          <GraphWorkspace
-            ref={graphWorkspaceRef}
-            {...graphWorkspaceProps}
+      {/* 2. Middle row: Sidebar + Graph + Analysis — fills remaining space */}
+      <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
+        {/* Sidebar — fixed width, scrolls internally */}
+        <div className="w-80 shrink-0 overflow-y-auto border-r border-shell-border bg-shell-surface">
+          <EvidenceSidebar
+            evidence={caseData.evidence}
+            selectedEvidenceId={highlightedEvidenceId}
+            onEvidenceSelect={onSelectEvidence}
+            filtersPanel={(
+              <WorkspaceFiltersPanel
+                activeFilters={activeFilters}
+                typeCounts={typeCounts}
+                layerPreferences={layerPreferences}
+                onToggleEntityFilter={toggleEntityFilter}
+                onSetLayerPreference={setLayerPreference}
+                dateRange={dateRange}
+              />
+            )}
           />
+        </div>
 
-          <section className="grid gap-shell-lg xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-lg">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
-                    Entities
-                  </p>
-                  <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">
-                    Graph Nodes
-                  </h2>
+        {/* Graph + bottom panels — fills remaining width */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* Graph canvas — fills available space */}
+          <div className="min-h-0 flex-1 overflow-hidden bg-shell-bg">
+            <GraphWorkspace
+              ref={graphWorkspaceRef}
+              {...graphWorkspaceProps}
+            />
+          </div>
+
+          {/* Entity/Connection lists — compact, below graph */}
+          <div className="shrink-0 border-t border-shell-border bg-shell-surface px-shell-md py-shell-sm">
+            <div className="flex gap-shell-md">
+              <div className="flex-1">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">Entities</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowEntityModal(true)}
+                    className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1 text-xs font-semibold text-shell-text-primary transition hover:border-shell-accent"
+                  >
+                    Add entity
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowEntityModal(true)}
-                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-4 py-2 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
-                >
-                  Add entity
-                </button>
-              </div>
-              <div className="space-y-3">
-                {caseData.graph.nodes.map((node) => {
-                  const isSelected = selectedNodeId === node.id;
-                  const isHighlighted = highlightedEntityIds.includes(node.id);
-
-                  return (
-                    <div
-                      key={node.id}
-                      className={`rounded-shell-lg border px-4 py-4 transition ${
-                        isSelected
-                          ? 'border-shell-accent/40 bg-shell-accent-muted'
-                          : isHighlighted
-                            ? 'border-amber-400/30 bg-amber-400/10'
-                            : 'border-shell-border bg-shell-bg'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <button
-                          type="button"
-                          onClick={() => onSelectNode(isSelected ? null : node.id)}
-                          className="text-left"
-                        >
-                          <p className="text-sm font-semibold text-shell-text-primary">{node.label}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-                            {node.type} · {node.status}
-                          </p>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEntityToDelete(node.id)}
-                          className="rounded-shell-pill border border-shell-destructive/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
-                        >
-                          Delete
-                        </button>
+                <div className="max-h-32 space-y-2 overflow-y-auto">
+                  {caseData.graph.nodes.map((node) => {
+                    const isSelected = selectedNodeId === node.id;
+                    const isHighlighted = highlightedEntityIds.includes(node.id);
+                    return (
+                      <div
+                        key={node.id}
+                        className={`rounded-shell-lg border px-3 py-2 transition ${
+                          isSelected
+                            ? 'border-shell-accent/40 bg-shell-accent-muted'
+                            : isHighlighted
+                              ? 'border-amber-400/30 bg-amber-400/10'
+                              : 'border-shell-border bg-shell-bg'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onSelectNode(isSelected ? null : node.id)}
+                            className="text-left text-xs font-semibold text-shell-text-primary"
+                          >
+                            {node.label}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEntityToDelete(node.id)}
+                            className="rounded-shell-pill border border-shell-destructive/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-lg">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
-                    Connections
-                  </p>
-                  <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">
-                    Relationship Edges
-                  </h2>
+                    );
+                  })}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowConnectionModal(true)}
-                  className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-4 py-2 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
-                >
-                  Add connection
-                </button>
               </div>
-              <div className="space-y-3">
-                {caseData.graph.edges.map((edge) => {
-                  const source = caseData.graph.nodes.find((node) => node.id === edge.source);
-                  const target = caseData.graph.nodes.find((node) => node.id === edge.target);
-
-                  return (
-                    <div
-                      key={edge.id}
-                      className="rounded-shell-lg border border-shell-border bg-shell-bg px-4 py-4"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-shell-text-primary">
+              <div className="flex-1">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">Connections</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowConnectionModal(true)}
+                    className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1 text-xs font-semibold text-shell-text-primary transition hover:border-shell-accent"
+                  >
+                    Add connection
+                  </button>
+                </div>
+                <div className="max-h-32 space-y-2 overflow-y-auto">
+                  {caseData.graph.edges.map((edge) => {
+                    const source = caseData.graph.nodes.find((node) => node.id === edge.source);
+                    const target = caseData.graph.nodes.find((node) => node.id === edge.target);
+                    return (
+                      <div
+                        key={edge.id}
+                        className="rounded-shell-lg border border-shell-border bg-shell-bg px-3 py-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-shell-text-primary">
                             {source?.label ?? edge.source} → {target?.label ?? edge.target}
                           </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-                            {edge.label} · strength {edge.strength.toFixed(1)}
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setConnectionToDelete(edge.id)}
+                            className="rounded-shell-pill border border-shell-destructive/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
+                          >
+                            ×
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setConnectionToDelete(edge.id)}
-                          className="rounded-shell-pill border border-shell-destructive/20 px-3 py-1 text-xs uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
-                        >
-                          Delete
-                        </button>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </section>
+          </div>
 
-          <div className="space-y-shell-md">
+          {/* 3. Timeline — fixed height, horizontal scroll */}
+          <div className="shrink-0">
             <TimelineBar
               caseData={caseData}
               activeEvidenceLabel={activeEvidenceLabel}
               selectedNodeLabel={selectedNodeLabel}
               highlightedCount={highlightedEntityIds.length}
             />
+          </div>
+
+          {/* 4. AI Command Bar — fixed height */}
+          <div className="shrink-0">
             <AICommandBar
               quickCommands={aiQuickCommands}
               recentCommands={commandHistory}
@@ -294,14 +288,17 @@ export default function CaseWorkspaceShell({
           </div>
         </div>
 
-        <WorkspaceAnalysisPanel
-          caseData={caseData}
-          selectedNode={selectedNode}
-          highlightedNodeIds={highlightedEntityIds}
-          aiResult={aiResult}
-          onDismiss={() => onSelectNode(null)}
-          onDismissAIResult={onDismissAIResult}
-        />
+        {/* Analysis panel — fixed width, scrolls internally */}
+        <div className="w-80 shrink-0 overflow-y-auto border-l border-shell-border bg-shell-surface">
+          <WorkspaceAnalysisPanel
+            caseData={caseData}
+            selectedNode={selectedNode}
+            highlightedNodeIds={highlightedEntityIds}
+            aiResult={aiResult}
+            onDismiss={() => onSelectNode(null)}
+            onDismissAIResult={onDismissAIResult}
+          />
+        </div>
       </div>
 
       <EntityModal

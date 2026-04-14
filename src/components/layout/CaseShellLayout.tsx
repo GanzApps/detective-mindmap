@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import CaseTabBar from '@/components/layout/CaseTabBar';
 import CaseListPage from '@/components/pages/CaseListPage';
@@ -20,6 +20,13 @@ export default function CaseShellLayout() {
   const openTabs = useCaseStore(selectOpenTabs);
   const activeTabCaseId = useCaseStore(selectActiveTabCaseId);
   const openTab = useCaseStore((state) => state.openTab);
+
+  // Auto-navigate to /cases when last tab is closed
+  useEffect(() => {
+    if (openTabs.length === 0) {
+      router.replace('/cases');
+    }
+  }, [openTabs.length, router]);
 
   // Sync URL param on mount and when active tab changes
   const tabFromUrl = searchParams.get('tab');
