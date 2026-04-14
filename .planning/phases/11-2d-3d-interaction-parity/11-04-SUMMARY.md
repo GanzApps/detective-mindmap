@@ -112,3 +112,12 @@ None — no external service configuration required.
 ---
 *Phase: 11-2d-3d-interaction-parity*
 *Completed: 2026-04-14*
+
+## Self-Check: PASSED
+
+- ForceGraph2D.tsx: FOUND
+- MindMap3D.tsx: FOUND
+- GraphWorkspace.tsx: FOUND
+- projection3d.test.ts: FOUND
+- 11-04-SUMMARY.md: FOUND
+- Commits 486ca6e, 8b3f21d, 2b58420, 8eb0615: all verified in git log
