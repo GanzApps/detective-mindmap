@@ -133,7 +133,7 @@ export default function CaseWorkspaceShell({
   };
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="flex min-h-full w-full flex-col">
       {/* 1. Compact Toolbar — strip style */}
       <div className="flex shrink-0 items-center justify-between border-b border-shell-border bg-shell-surface px-3 py-1.5">
         <div className="flex items-center gap-3">
@@ -200,11 +200,11 @@ export default function CaseWorkspaceShell({
         </div>
       </div>
 
-      {/* 2. Middle row: Sidebar + Graph + Analysis — fills remaining space */}
-      <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
+      {/* 2. Middle row: Sidebar + Graph + Analysis */}
+      <div className="flex flex-1 flex-row">
         {/* Sidebar — collapsible, fixed width when open */}
         {sidebarOpen && (
-          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-shell-border bg-shell-surface">
+          <div className="flex w-72 shrink-0 flex-col border-r border-shell-border bg-shell-surface">
             {/* Evidence sidebar */}
             <div className="flex-1 overflow-y-auto">
               <EvidenceSidebar
@@ -292,9 +292,9 @@ export default function CaseWorkspaceShell({
         )}
 
         {/* Center: Graph + Timeline + AI Bar */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {/* Graph canvas — fills available space */}
-          <div className="min-h-0 flex-1 overflow-hidden bg-shell-bg">
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Graph canvas — minimum height for visibility */}
+          <div className="min-h-[500px] flex-1 bg-shell-bg">
             <GraphWorkspace
               ref={graphWorkspaceRef}
               {...graphWorkspaceProps}
@@ -325,7 +325,7 @@ export default function CaseWorkspaceShell({
 
         {/* Analysis panel — collapsible */}
         {analysisOpen && (
-          <div className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-shell-border bg-shell-surface">
+          <div className="flex w-80 shrink-0 flex-col border-l border-shell-border bg-shell-surface">
             <div className="flex items-center justify-between border-b border-shell-border px-3 py-1.5">
               <span className="text-xs font-medium text-shell-text-muted">Analysis</span>
               <button

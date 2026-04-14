@@ -44,20 +44,18 @@ export default function CaseShellLayout() {
   const hasOpenTabs = openTabs.length > 0;
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="flex h-screen w-full flex-col">
       {/* Tab bar — always visible */}
       <CaseTabBar />
 
-      {/* Content area */}
-      {hasOpenTabs && activeTabCaseId ? (
-        <div className="flex-1 overflow-hidden">
+      {/* Content area — scrollable */}
+      <div className="flex-1 overflow-auto">
+        {hasOpenTabs && activeTabCaseId ? (
           <CaseWorkspacePage caseId={activeTabCaseId} />
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto">
+        ) : (
           <CaseListPage />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
