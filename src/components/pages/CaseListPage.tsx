@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import CaseModal from '@/components/crud/CaseModal';
 import { useCaseListData } from '@/hooks/useCaseData';
 import { useCaseStore } from '@/store/caseStore';
+import { useRouter } from 'next/navigation';
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-US', {
@@ -17,7 +17,14 @@ function formatDate(value: string) {
 export default function CaseListPage() {
   const { cases, isLoading, error } = useCaseListData();
   const createCase = useCaseStore((state) => state.createCase);
+  const openTab = useCaseStore((state) => state.openTab);
+  const router = useRouter();
   const [showCaseModal, setShowCaseModal] = useState(false);
+
+  function handleEnterWorkspace(caseId: string, caseName: string) {
+    openTab(caseId, caseName);
+    router.replace(`/cases?tab=${caseId}`);
+  }
 
   return (
     <main className="min-h-screen bg-shell-bg px-6 py-8 text-shell-text-primary">
@@ -57,10 +64,10 @@ export default function CaseListPage() {
 
         <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {cases.map((caseData) => (
-            <Link
+            <div
               key={caseData.id}
-              href={`/cases/${caseData.id}`}
-              className="group rounded-shell-xl border border-shell-border bg-shell-surface p-shell-lg shadow-shell-md transition hover:-translate-y-1 hover:border-shell-accent/30 hover:bg-shell-surface-raised"
+              onClick={() => handleEnterWorkspace(caseData.id, caseData.name)}
+              className="group cursor-pointer rounded-shell-xl border border-shell-border bg-shell-surface p-shell-lg shadow-shell-md transition hover:-translate-y-1 hover:border-shell-accent/30 hover:bg-shell-surface-raised"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -96,7 +103,7 @@ export default function CaseListPage() {
                 <span>Updated {formatDate(caseData.updatedAt)}</span>
                 <span className="transition group-hover:text-shell-accent">Enter workspace</span>
               </div>
-            </Link>
+            </div>
           ))}
         </section>
 
