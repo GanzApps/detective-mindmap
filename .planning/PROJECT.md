@@ -1,5 +1,13 @@
 # Detective Mindmap
 
+## Current State
+
+**Shipped:** v2.0 Investigation Workspace Revamp (2026-04-14)
+
+All v2.0 goals achieved: unified shell tokens, workspace frame with tabbed rails, typeahead-first search, semantic entity styling, 2D/3D interaction parity, and AI command routing with known-intent parser.
+
+**Archive:** `.planning/milestones/v2.0-ROADMAP.md`
+
 ## What This Is
 
 A desktop-first investigation workspace for detective-style case analysis. The product combines a case dashboard, a graph-centered investigation workspace, synchronized 2D and 3D graph views, evidence/filter rails, a timeline, and an AI-assisted command surface.
@@ -10,7 +18,7 @@ The current milestone is not about adding arbitrary v2 features. It is specifica
 
 A detective must be able to open a case, immediately understand the investigation space, search and focus the relevant network, switch between 2D and 3D without losing context, and act from a clean, high-signal workspace.
 
-## Current Milestone: v2.0 Investigation Workspace Revamp
+## Previous Milestone: v2.0 Investigation Workspace Revamp
 
 ### Goal
 
@@ -27,6 +35,14 @@ Rebuild the shell and graph workspace so the app aligns with the saved MAC refer
 - Entity-type-specific iconic node shapes and reference-aligned color semantics
 - Persistent minimap, timeline, and polished AI command surface
 - Known-intent AI command routing into predefined graph/workspace actions
+
+### Outcome
+
+All targets achieved. See `.planning/milestones/v2.0-ROADMAP.md` for full archive.
+
+## Next Milestone Goals
+
+_To be defined via `/gsd-new-milestone` — requires fresh requirements definition._
 
 ## Requirements
 

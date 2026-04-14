@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`
 
 **Core value:** A detective must be able to open a case, understand the workspace immediately, focus the relevant network, and move between 2D and 3D without losing context.
-**Current focus:** Phase 12 is planned and ready to execute.
+**Current focus:** Phase 12 execution is complete and ready for verification.
 
 ## Current Position
 
 Phase: 12 of 12
-Plan: 3 of 3 planned for current phase
-Status: Phase 12 planned, awaiting execution
-Last activity: 2026-04-14 - planned Phase 12 AI command routing and workspace polish
+Plan: 3 of 3 executed for current phase
+Status: Phase 12 UAT passed — Milestone v2.0 complete
+Last activity: 2026-04-14 - Phase 12 UAT passed, milestone complete
 
-Progress: [#########-] 75%
+Progress: [############] 100%
 
 ## Current Truth
 
@@ -41,6 +41,11 @@ Progress: [#########-] 75%
   - separate AI-result mode in the existing right-side panel
   - mixed static + context-aware quick command chips
   - inline command status with lightweight history in the command surface
+- Phase 12 execution delivered:
+  - known-intent command parsing and routing
+  - right-panel AI-result mode
+  - static + context-aware quick commands
+  - inline command status and lightweight command history
 
 ## Verification Status
 
@@ -49,16 +54,15 @@ Progress: [#########-] 75%
 - Phase 9 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
 - Phase 10 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
 - Phase 11 UAT: passed per final user verification
-- Phase 12 is now planned in three waves:
-  - 12-01 command surface and known-intent foundation
-  - 12-02 right-panel AI result mode
-  - 12-03 quick chips, history, and final polish
+- Phase 12 UAT: complete (all checks passed)
+  - `pnpm exec tsc --noEmit` passed
+  - `pnpm exec jest --runInBand` passed (64/64 tests)
+  - `pnpm build` passed (compiled in 4.1s, 5/5 pages)
 
 ## Next Actions
 
-1. Run `/gsd-execute-phase 12`
-2. Run `/gsd-secure-phase 8` (security review still pending)
-3. Verify Phase 12 after execution
+1. Run `/gsd-secure-phase 8` (security review still pending)
+2. Run `/gsd-complete-milestone` to close out v2.0
 
 ## Blockers / Concerns
 
@@ -71,8 +75,8 @@ Progress: [#########-] 75%
 
 ## Resume Point
 
-Resume from: `.planning/ROADMAP.md` -> Phase 12 execution
-Next phase entry: `.planning/phases/12-ai-command-routing-workspace-polish/12-01-PLAN.md`
+Resume from: `.planning/ROADMAP.md` -> Phase 12 verification
+Next phase entry: `.planning/phases/12-ai-command-routing-workspace-polish/12-VALIDATION.md`
 
 ---
-*Last updated: 2026-04-14 after Phase 12 planning*
+*Last updated: 2026-04-14 after Phase 12 execution*
