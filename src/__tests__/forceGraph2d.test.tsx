@@ -11,9 +11,11 @@ describe('ForceGraph2D', () => {
         highlightedNodeIds={['node-002', 'node-007']}
         searchQuery="marco"
         committedSearchNodeId={null}
+        nodePositions={{}}
         isActive
         onSearchQueryChange={() => {}}
         onCommitSearchSelection={() => {}}
+        onUpdateNodePosition={() => {}}
         onSelectNode={() => {}}
       />,
     );

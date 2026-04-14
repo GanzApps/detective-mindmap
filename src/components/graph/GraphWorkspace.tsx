@@ -14,6 +14,7 @@ import {
   type ViewMode,
   useCaseStore,
 } from '@/store/caseStore';
+import { type SharedNodePosition } from '@/lib/graph/projection3d';
 
 export function shouldDismissNodeDetail(key: string) {
   return key === 'Escape';
@@ -67,6 +68,16 @@ function buildFallbackMinimapState(
   };
 }
 
+// Converts a position that originated from the 3D renderer into 2D canvas
+// coordinate space. In 3D, SharedNodePosition.x = world X and
+// SharedNodePosition.y = world Z. Both axes use the same scale in 2D.
+// A factor of 1.5 maps the 3D tier-radius range (~0-400) to the 2D force
+// layout canvas range without clamping.
+function convert3DPositionTo2D(position: SharedNodePosition): SharedNodePosition {
+  const SCALE = 1.5;
+  return { x: position.x * SCALE, y: position.y * SCALE };
+}
+
 const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProps>(function GraphWorkspace({
   caseData,
   viewMode,
@@ -77,6 +88,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
 }, ref) {
   const [searchQuery, setSearchQuery] = useState('');
   const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
+  const [nodePositions, setNodePositions] = useState<Record<string, SharedNodePosition>>({});
   const fallbackMinimapState = useMemo(
     () => buildFallbackMinimapState(caseData.graph, viewMode, selectedNodeId),
     [caseData.graph, viewMode, selectedNodeId],
@@ -100,6 +112,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   useEffect(() => {
     setSearchQuery('');
     setCommittedSearchNodeId(null);
+    setNodePositions({});
   }, [caseData.id]);
 
   useEffect(() => {
@@ -182,6 +195,21 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
     }
   }, [viewMode]);
 
+  const handleUpdateNodePosition = useCallback((nodeId: string, position: SharedNodePosition) => {
+    const stored = viewMode === '3d' ? convert3DPositionTo2D(position) : position;
+    setNodePositions((current) => {
+      const existing = current[nodeId];
+      if (existing && existing.x === stored.x && existing.y === stored.y) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [nodeId]: stored,
+      };
+    });
+  }, [viewMode]);
+
   return (
     <div data-testid="graph-workspace" className="relative">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -238,12 +266,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             activeEntityTypes={activeEntityTypes}
             searchQuery={searchQuery}
             committedSearchNodeId={committedSearchNodeId}
+            nodePositions={nodePositions}
             showEdgeLabels={layerPreferences.showEdgeLabels}
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '2d'}
             onSearchQueryChange={setSearchQuery}
             onCommitSearchSelection={handleCommitSearchSelection}
+            onUpdateNodePosition={handleUpdateNodePosition}
             onSelectNode={handleSelectNode}
             onMinimapStateChange={handle2DMinimapStateChange}
           />
@@ -258,9 +288,15 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             selectedNodeId={selectedNodeId}
             highlightedNodeIds={highlightedNodeIds}
             activeEntityTypes={activeEntityTypes}
+            searchQuery={searchQuery}
+            committedSearchNodeId={committedSearchNodeId}
+            nodePositions={nodePositions}
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '3d'}
+            onSearchQueryChange={setSearchQuery}
+            onCommitSearchSelection={handleCommitSearchSelection}
+            onUpdateNodePosition={handleUpdateNodePosition}
             onSelectNode={handleSelectNode}
             onMinimapStateChange={handle3DMinimapStateChange}
           />

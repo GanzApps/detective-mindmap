@@ -1,5 +1,10 @@
 import { type GraphData, type GraphNode } from '@/lib/graph/graphTypes';
 
+export interface SharedNodePosition {
+  x: number;
+  y: number;
+}
+
 export interface LayoutNode3D {
   id: string;
   x: number;
@@ -68,7 +73,10 @@ function projectCartesian(
   };
 }
 
-export function buildMindMap3DLayout(graph: GraphData): LayoutNode3D[] {
+export function buildMindMap3DLayout(
+  graph: GraphData,
+  sharedPositions: Record<string, SharedNodePosition> = {},
+): LayoutNode3D[] {
   const childrenByParent = new Map<string | null, GraphNode[]>();
 
   for (const node of graph.nodes) {
@@ -104,11 +112,13 @@ export function buildMindMap3DLayout(graph: GraphData): LayoutNode3D[] {
         ? 0
         : parentY + (yOffsetIndex * VERTICAL_SPREAD * Math.max(0.35, 1 - node.tier * 0.12));
 
+      const sharedPosition = sharedPositions[node.id];
+
       layout.push({
         id: node.id,
-        x: Math.cos(angle) * tierRadius,
+        x: sharedPosition?.x ?? Math.cos(angle) * tierRadius,
         y,
-        z: Math.sin(angle) * tierRadius,
+        z: sharedPosition?.y ?? Math.sin(angle) * tierRadius,
         tier: node.tier,
         label: node.label,
         node,

@@ -14,15 +14,9 @@ const config: Config = {
     '**/*.test.ts',
     '**/*.test.tsx',
   ],
-  testPathIgnorePatterns: [
-    '<rootDir>/.claude/worktrees/',
-  ],
-  modulePathIgnorePatterns: [
-    '<rootDir>/.claude/worktrees/',
-  ],
-  watchPathIgnorePatterns: [
-    '<rootDir>/.claude/worktrees/',
-  ],
+  testPathIgnorePatterns: [],
+  modulePathIgnorePatterns: [],
+  watchPathIgnorePatterns: [],
   transformIgnorePatterns: [
     '/node_modules/(?!(d3|d3-[^/]+)/)',
   ],

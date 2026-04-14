@@ -9,7 +9,13 @@ describe('MindMap3D', () => {
         graph={mockCases[0].graph}
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002', 'node-007']}
+        searchQuery=""
+        committedSearchNodeId={null}
+        nodePositions={{}}
         isActive
+        onSearchQueryChange={() => {}}
+        onCommitSearchSelection={() => {}}
+        onUpdateNodePosition={() => {}}
         onSelectNode={() => {}}
       />,
     );
