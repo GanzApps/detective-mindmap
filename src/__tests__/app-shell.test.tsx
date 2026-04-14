@@ -149,9 +149,8 @@ describe('app shell smoke', () => {
     expect(html).toContain('Investigation inputs');
     expect(html).toContain('Raw Evidence');
     expect(html).toContain('Filters &amp; Layers');
-    expect(html).toContain('Export Report');
+    expect(html).toContain('Export');
     expect(html).toContain('Graph workspace');
-    expect(html).toContain('Workspace analysis panel');
     expect(html).toContain('Marco Delgado');
     expect(html).toContain('Investigation command center');
     expect(html).toContain('Timeline');

@@ -86,6 +86,12 @@ export default function CaseWorkspaceShell({
   const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [entityToDelete, setEntityToDelete] = useState<string | null>(null);
   const [connectionToDelete, setConnectionToDelete] = useState<string | null>(null);
+  // Collapsible panels — default: sidebar open, analysis panel hidden
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  // Expandable sections inside sidebar
+  const [entitiesExpanded, setEntitiesExpanded] = useState(false);
+  const [connectionsExpanded, setConnectionsExpanded] = useState(false);
   const activeFilters = useCaseStore(selectActiveFilters);
   const layerPreferences = useCaseStore(selectLayerPreferences);
   const toggleEntityFilter = useCaseStore((state) => state.toggleEntityFilter);
@@ -128,45 +134,164 @@ export default function CaseWorkspaceShell({
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      {/* 1. Toolbar — fixed height */}
-      <div className="shrink-0">
-        <CaseHeader
-          caseData={caseData}
-          entityCount={caseData.graph.nodes.length}
-          connectionCount={caseData.graph.edges.length}
-          highlightedCount={highlightedEntityIds.length}
-          viewMode={viewMode}
-          onSetViewMode={onSetViewMode}
-          onOpenEntityModal={() => setShowEntityModal(true)}
-          onOpenConnectionModal={() => setShowConnectionModal(true)}
-          onClearHighlights={onClearHighlights}
-          onExport={onExport}
-          isExporting={isExporting}
-        />
+      {/* 1. Compact Toolbar — strip style */}
+      <div className="flex shrink-0 items-center justify-between border-b border-shell-border bg-shell-surface px-3 py-1.5">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="rounded p-1 text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+            title="Toggle sidebar"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-semibold text-shell-text-primary">{caseData.name}</h1>
+            <span className="rounded-full border border-shell-border px-2 py-0.5 text-[10px] uppercase tracking-wider text-shell-text-muted">
+              {caseData.status}
+            </span>
+          </div>
+          <span className="text-xs text-shell-text-muted">{caseData.graph.nodes.length} entities · {caseData.graph.edges.length} connections</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-shell-border bg-shell-bg p-0.5">
+            <button
+              type="button"
+              onClick={() => onSetViewMode('2d')}
+              className={`rounded px-2 py-1 text-xs font-medium transition ${viewMode === '2d' ? 'bg-shell-accent text-white' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+            >
+              2D
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetViewMode('3d')}
+              className={`rounded px-2 py-1 text-xs font-medium transition ${viewMode === '3d' ? 'bg-shell-accent text-white' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+            >
+              3D
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => onExport('png')}
+            disabled={isExporting}
+            className="rounded-lg border border-shell-border px-3 py-1 text-xs font-medium text-shell-text-secondary transition hover:bg-shell-surface-raised disabled:opacity-50"
+          >
+            {isExporting ? 'Exporting…' : 'Export'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowEntityModal(true)}
+            className="rounded-lg bg-shell-accent px-3 py-1 text-xs font-semibold text-white transition hover:bg-shell-accent-hover"
+          >
+            + Entity
+          </button>
+          <button
+            type="button"
+            onClick={() => setAnalysisOpen((v) => !v)}
+            className={`rounded p-1 transition ${analysisOpen ? 'text-shell-accent' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+            title="Toggle analysis panel"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* 2. Middle row: Sidebar + Graph + Analysis — fills remaining space */}
       <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
-        {/* Sidebar — fixed width, scrolls internally */}
-        <div className="w-80 shrink-0 overflow-y-auto border-r border-shell-border bg-shell-surface">
-          <EvidenceSidebar
-            evidence={caseData.evidence}
-            selectedEvidenceId={highlightedEvidenceId}
-            onEvidenceSelect={onSelectEvidence}
-            filtersPanel={(
-              <WorkspaceFiltersPanel
-                activeFilters={activeFilters}
-                typeCounts={typeCounts}
-                layerPreferences={layerPreferences}
-                onToggleEntityFilter={toggleEntityFilter}
-                onSetLayerPreference={setLayerPreference}
-                dateRange={dateRange}
+        {/* Sidebar — collapsible, fixed width when open */}
+        {sidebarOpen && (
+          <div className="flex w-72 shrink-0 flex-col overflow-hidden border-r border-shell-border bg-shell-surface">
+            {/* Evidence sidebar */}
+            <div className="flex-1 overflow-y-auto">
+              <EvidenceSidebar
+                evidence={caseData.evidence}
+                selectedEvidenceId={highlightedEvidenceId}
+                onEvidenceSelect={onSelectEvidence}
+                filtersPanel={(
+                  <WorkspaceFiltersPanel
+                    activeFilters={activeFilters}
+                    typeCounts={typeCounts}
+                    layerPreferences={layerPreferences}
+                    onToggleEntityFilter={toggleEntityFilter}
+                    onSetLayerPreference={setLayerPreference}
+                    dateRange={dateRange}
+                  />
+                )}
               />
-            )}
-          />
-        </div>
+            </div>
 
-        {/* Graph + bottom panels — fills remaining width */}
+            {/* Expandable entity/connection lists */}
+            <div className="shrink-0 border-t border-shell-border">
+              {/* Entities */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setEntitiesExpanded((v) => !v)}
+                  className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+                >
+                  <span>Entities ({caseData.graph.nodes.length})</span>
+                  <svg className={`h-3 w-3 transition ${entitiesExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {entitiesExpanded && (
+                  <div className="max-h-40 overflow-y-auto px-3 pb-2">
+                    {caseData.graph.nodes.map((node) => {
+                      const isSelected = selectedNodeId === node.id;
+                      const isHighlighted = highlightedEntityIds.includes(node.id);
+                      return (
+                        <div key={node.id} className={`mb-1 flex items-center justify-between rounded border px-2 py-1.5 text-xs ${
+                          isSelected ? 'border-shell-accent/40 bg-shell-accent-muted' : isHighlighted ? 'border-amber-400/30 bg-amber-400/10' : 'border-shell-border bg-shell-bg'
+                        }`}>
+                          <button type="button" onClick={() => onSelectNode(isSelected ? null : node.id)} className="flex-1 truncate text-left font-medium text-shell-text-primary">
+                            {node.label}
+                          </button>
+                          <button type="button" onClick={() => setEntityToDelete(node.id)} className="ml-1 text-shell-destructive opacity-60 hover:opacity-100">×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Connections */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setConnectionsExpanded((v) => !v)}
+                  className="flex w-full items-center justify-between border-t border-shell-border px-3 py-2 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+                >
+                  <span>Connections ({caseData.graph.edges.length})</span>
+                  <svg className={`h-3 w-3 transition ${connectionsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {connectionsExpanded && (
+                  <div className="max-h-40 overflow-y-auto px-3 pb-2">
+                    {caseData.graph.edges.map((edge) => {
+                      const source = caseData.graph.nodes.find((n) => n.id === edge.source);
+                      const target = caseData.graph.nodes.find((n) => n.id === edge.target);
+                      return (
+                        <div key={edge.id} className="mb-1 flex items-center justify-between rounded border border-shell-border bg-shell-bg px-2 py-1.5 text-xs">
+                          <span className="flex-1 truncate text-shell-text-primary">
+                            {source?.label ?? '?'} → {target?.label ?? '?'}
+                          </span>
+                          <button type="button" onClick={() => setConnectionToDelete(edge.id)} className="ml-1 text-shell-destructive opacity-60 hover:opacity-100">×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Center: Graph + Timeline + AI Bar */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Graph canvas — fills available space */}
           <div className="min-h-0 flex-1 overflow-hidden bg-shell-bg">
@@ -176,98 +301,8 @@ export default function CaseWorkspaceShell({
             />
           </div>
 
-          {/* Entity/Connection lists — compact, below graph */}
-          <div className="shrink-0 border-t border-shell-border bg-shell-surface px-shell-md py-shell-sm">
-            <div className="flex gap-shell-md">
-              <div className="flex-1">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">Entities</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowEntityModal(true)}
-                    className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1 text-xs font-semibold text-shell-text-primary transition hover:border-shell-accent"
-                  >
-                    Add entity
-                  </button>
-                </div>
-                <div className="max-h-32 space-y-2 overflow-y-auto">
-                  {caseData.graph.nodes.map((node) => {
-                    const isSelected = selectedNodeId === node.id;
-                    const isHighlighted = highlightedEntityIds.includes(node.id);
-                    return (
-                      <div
-                        key={node.id}
-                        className={`rounded-shell-lg border px-3 py-2 transition ${
-                          isSelected
-                            ? 'border-shell-accent/40 bg-shell-accent-muted'
-                            : isHighlighted
-                              ? 'border-amber-400/30 bg-amber-400/10'
-                              : 'border-shell-border bg-shell-bg'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={() => onSelectNode(isSelected ? null : node.id)}
-                            className="text-left text-xs font-semibold text-shell-text-primary"
-                          >
-                            {node.label}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEntityToDelete(node.id)}
-                            className="rounded-shell-pill border border-shell-destructive/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">Connections</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowConnectionModal(true)}
-                    className="rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1 text-xs font-semibold text-shell-text-primary transition hover:border-shell-accent"
-                  >
-                    Add connection
-                  </button>
-                </div>
-                <div className="max-h-32 space-y-2 overflow-y-auto">
-                  {caseData.graph.edges.map((edge) => {
-                    const source = caseData.graph.nodes.find((node) => node.id === edge.source);
-                    const target = caseData.graph.nodes.find((node) => node.id === edge.target);
-                    return (
-                      <div
-                        key={edge.id}
-                        className="rounded-shell-lg border border-shell-border bg-shell-bg px-3 py-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-semibold text-shell-text-primary">
-                            {source?.label ?? edge.source} → {target?.label ?? edge.target}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => setConnectionToDelete(edge.id)}
-                            className="rounded-shell-pill border border-shell-destructive/20 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-shell-destructive transition hover:border-shell-destructive"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Timeline — fixed height, horizontal scroll */}
-          <div className="shrink-0">
+          {/* Timeline — collapsible */}
+          <div className="shrink-0 border-t border-shell-border">
             <TimelineBar
               caseData={caseData}
               activeEvidenceLabel={activeEvidenceLabel}
@@ -276,8 +311,8 @@ export default function CaseWorkspaceShell({
             />
           </div>
 
-          {/* 4. AI Command Bar — fixed height */}
-          <div className="shrink-0">
+          {/* AI Command Bar — fixed height */}
+          <div className="shrink-0 border-t border-shell-border">
             <AICommandBar
               quickCommands={aiQuickCommands}
               recentCommands={commandHistory}
@@ -288,17 +323,33 @@ export default function CaseWorkspaceShell({
           </div>
         </div>
 
-        {/* Analysis panel — fixed width, scrolls internally */}
-        <div className="w-80 shrink-0 overflow-y-auto border-l border-shell-border bg-shell-surface">
-          <WorkspaceAnalysisPanel
-            caseData={caseData}
-            selectedNode={selectedNode}
-            highlightedNodeIds={highlightedEntityIds}
-            aiResult={aiResult}
-            onDismiss={() => onSelectNode(null)}
-            onDismissAIResult={onDismissAIResult}
-          />
-        </div>
+        {/* Analysis panel — collapsible */}
+        {analysisOpen && (
+          <div className="flex w-80 shrink-0 flex-col overflow-hidden border-l border-shell-border bg-shell-surface">
+            <div className="flex items-center justify-between border-b border-shell-border px-3 py-1.5">
+              <span className="text-xs font-medium text-shell-text-muted">Analysis</span>
+              <button
+                type="button"
+                onClick={() => setAnalysisOpen(false)}
+                className="rounded p-1 text-shell-text-muted transition hover:text-shell-text-secondary"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <WorkspaceAnalysisPanel
+                caseData={caseData}
+                selectedNode={selectedNode}
+                highlightedNodeIds={highlightedEntityIds}
+                aiResult={aiResult}
+                onDismiss={() => onSelectNode(null)}
+                onDismissAIResult={onDismissAIResult}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <EntityModal
