@@ -4,6 +4,7 @@ import {
   projectNodes3D,
   type CameraState3D,
   type ProjectedNode3D,
+  type SharedNodePosition,
   type Viewport3D,
 } from '@/lib/graph/projection3d';
 
@@ -14,6 +15,7 @@ interface DrawOptions {
   activeEntityTypes?: EntityType[];
   showLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
+  sharedPositions?: Record<string, SharedNodePosition>;
 }
 
 interface FramePreparation {
@@ -70,7 +72,7 @@ export function prepareFrame3D(
   viewport: Viewport3D,
   options: DrawOptions = {},
 ): FramePreparation {
-  const layoutNodes = buildMindMap3DLayout(graph);
+  const layoutNodes = buildMindMap3DLayout(graph, options.sharedPositions);
   const projectedNodes = projectNodes3D(layoutNodes, camera, viewport);
   const projectedNodeMap = Object.fromEntries(
     projectedNodes.map((node) => [node.id, node]),
@@ -177,8 +179,7 @@ export function drawFrame3D(
 
     if (isDimmed) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.radius, 0, Math.PI * 2);
+      drawProjectedShape(ctx, node);
       ctx.fillStyle = 'rgba(255,255,255,0.05)';
       ctx.fill();
       ctx.restore();
@@ -217,8 +218,7 @@ export function drawFrame3D(
     }
 
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(node.sx, node.sy, node.radius, 0, Math.PI * 2);
+    drawProjectedShape(ctx, node);
     ctx.fillStyle = semanticColor;
     ctx.globalAlpha = isSelected || isConnected || isHighlighted
       ? 1
@@ -241,8 +241,7 @@ export function drawFrame3D(
 
     if (isSelected || isConnected || isHighlighted) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.radius + (isSelected ? 1.5 : 0.5), 0, Math.PI * 2);
+      drawProjectedShape(ctx, { ...node, radius: node.radius + (isSelected ? 1.5 : 0.5) });
       ctx.strokeStyle = rgbaFromHex(semanticColor, isSelected ? 0.9 : 0.68);
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.stroke();
@@ -274,4 +273,93 @@ export function drawFrame3D(
   }
 
   return prepared;
+}
+
+function drawProjectedShape(
+  ctx: CanvasRenderingContext2D,
+  node: Pick<ProjectedNode3D, 'sx' | 'sy' | 'radius'> & { node: { type: EntityType } },
+) {
+  const radius = node.radius;
+  const shape = node.node.type;
+
+  switch (shape) {
+    case 'organization': {
+      drawRoundedRect(ctx, node.sx - radius, node.sy - radius * 0.82, radius * 2, radius * 1.64, radius * 0.3);
+      return;
+    }
+    case 'evidence': {
+      const x = node.sx - radius * 0.86;
+      const y = node.sy - radius * 1.02;
+      const width = radius * 1.72;
+      const height = radius * 2.04;
+      drawRoundedRect(ctx, x, y, width, height, radius * 0.22);
+      ctx.moveTo(x + width * 0.7, y);
+      ctx.lineTo(x + width, y + height * 0.3);
+      ctx.lineTo(x + width * 0.7, y + height * 0.3);
+      ctx.closePath();
+      return;
+    }
+    case 'event': {
+      ctx.beginPath();
+      ctx.moveTo(node.sx, node.sy - radius);
+      ctx.lineTo(node.sx + radius, node.sy);
+      ctx.lineTo(node.sx, node.sy + radius);
+      ctx.lineTo(node.sx - radius, node.sy);
+      ctx.closePath();
+      return;
+    }
+    case 'location': {
+      const topRadius = radius * 0.76;
+      ctx.beginPath();
+      ctx.arc(node.sx, node.sy - radius * 0.16, topRadius, Math.PI * 0.08, Math.PI * 0.92, true);
+      ctx.quadraticCurveTo(node.sx - radius * 0.68, node.sy + radius * 0.16, node.sx, node.sy + radius * 1.04);
+      ctx.quadraticCurveTo(node.sx + radius * 0.68, node.sy + radius * 0.16, node.sx + topRadius, node.sy - radius * 0.16);
+      ctx.closePath();
+      return;
+    }
+    case 'vehicle': {
+      drawRoundedRect(ctx, node.sx - radius * 1.08, node.sy - radius * 0.62, radius * 2.16, radius * 1.24, radius * 0.56);
+      return;
+    }
+    case 'digital': {
+      const width = radius * 0.94;
+      const height = radius * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(node.sx - width * 0.55, node.sy - height);
+      ctx.lineTo(node.sx + width * 0.55, node.sy - height);
+      ctx.lineTo(node.sx + width, node.sy);
+      ctx.lineTo(node.sx + width * 0.55, node.sy + height);
+      ctx.lineTo(node.sx - width * 0.55, node.sy + height);
+      ctx.lineTo(node.sx - width, node.sy);
+      ctx.closePath();
+      return;
+    }
+    case 'person':
+    default: {
+      ctx.beginPath();
+      ctx.arc(node.sx, node.sy, radius, 0, Math.PI * 2);
+    }
+  }
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
