@@ -12,9 +12,41 @@ describe('buildMindMap3DLayout', () => {
     expect(layout[0].id).toBeDefined();
     expect(layout.find((node) => node.id === 'node-001')?.tier).toBe(0);
   });
+
+  it('applies shared position overrides to x and z placement', () => {
+    const graph = buildGraphFromCase(mockCases[0]);
+    const layout = buildMindMap3DLayout(graph, {
+      'node-001': { x: 123, y: -77 },
+    });
+
+    expect(layout.find((node) => node.id === 'node-001')).toEqual(
+      expect.objectContaining({ x: 123, z: -77 }),
+    );
+  });
 });
 
 describe('projectNode3D', () => {
+  it('projects positive world-Y to above screen center (screen-Y inversion)', () => {
+    const viewport = { width: 800, height: 600 };
+    const camera = { rotX: 0, rotY: 0, zoom: 1 };
+
+    const above = projectNode3D(
+      { id: 'a', x: 0, y: 100, z: 0, tier: 1, label: 'A', node: mockCases[0].graph.nodes[0] },
+      camera,
+      viewport,
+    );
+    const below = projectNode3D(
+      { id: 'b', x: 0, y: -100, z: 0, tier: 1, label: 'B', node: mockCases[0].graph.nodes[0] },
+      camera,
+      viewport,
+    );
+
+    // Positive world-Y → above screen center (sy < height/2)
+    expect(above.sy).toBeLessThan(viewport.height / 2);
+    // Negative world-Y → below screen center (sy > height/2)
+    expect(below.sy).toBeGreaterThan(viewport.height / 2);
+  });
+
   it('projects a node into screen space with scale and depth', () => {
     const projected = projectNode3D(
       {
@@ -65,7 +97,7 @@ describe('hitTest3D', () => {
       },
     ] as const;
 
-    expect(hitTest3D(projected as never, 108, 100)?.id).toBe('node-a');
-    expect(hitTest3D(projected as never, 400, 100)).toBeNull();
+    expect(hitTest3D(projected as never, 108, 100).node?.id).toBe('node-a');
+    expect(hitTest3D(projected as never, 400, 100).node).toBeNull();
   });
 });
