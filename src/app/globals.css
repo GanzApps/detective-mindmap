@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* ─── Full-viewport fixed layout — no page-level scroll ───────────────────── */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* ─── Shell token values ──────────────────────────────────────────────────── */
 /* Default: dark theme. Override with [data-theme="light"] on <html>.          */
 
