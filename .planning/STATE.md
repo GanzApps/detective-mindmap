@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`
 
 **Core value:** A detective must be able to open a case, understand the workspace immediately, focus the relevant network, and move between 2D and 3D without losing context.
-**Current focus:** Phase 10 execution is complete. The graph search and visual language now align with the saved revamp direction, and Phase 11 is the next active planning target.
+**Current focus:** Phase 11 gap-closure complete. Both drag bugs fixed, coordinate carry corrected. Ready for final verification.
 
 ## Current Position
 
-Phase: 10 of 12
-Plan: 3 of 3 planned for current phase
-Status: Phase 10 executed and validated
-Last activity: 2026-04-13 - executed Phase 10 graph visual language and search focus
+Phase: 11 of 12
+Plan: 4 of 4 planned for current phase
+Status: Phase 11 gap-closure executed, awaiting final verification
+Last activity: 2026-04-14 - executed Phase 11 gap-closure plan (11-04)
 
-Progress: [#######---] 54%
+Progress: [########--] 60%
 
 ## Current Truth
 
@@ -30,20 +30,32 @@ Progress: [#######---] 54%
   - semantic entity color and iconic shape language
   - dimmed focused-network readability
   - default label-on / selective edge-label behavior
+- Phase 11 decisions are now locked for:
+  - exact shared placement between 2D and 3D
+  - preserving selected node plus focused neighborhood on view switch
+  - gesture parity as close as practical
+  - preserving node/focus state only, not exact camera framing
+- Phase 11 gap-closure (11-04) delivered:
+  - 2D drag fixed: `.subject()` now uses `pointer(event, canvas)` for canvas-relative coords
+  - 3D drag vertical inversion fixed: `worldDeltaY` formula negates `deltaY` to compensate screen-Y inversion
+  - 3D→2D position carry fixed: `convert3DPositionTo2D(SCALE=1.5)` converts 3D world (x,z) to 2D canvas (x,y)
+  - Screen-Y inversion regression test added to projection3d.test.ts
+  - 61 tests pass, TypeScript clean, build succeeds
 
 ## Verification Status
 
 - Phase 8 UAT: complete (`7/7` passed)
 - Security review for Phase 8: not yet recorded
-- Phase 9 validation: `pnpm exec tsc --noEmit`, `pnpm test -- --runInBand`, and `pnpm build` all passed
-- Phase 10 validation: `pnpm exec tsc --noEmit`, `pnpm test -- --runInBand`, and `pnpm build` all passed
-- Next recommended gate before advancing execution: `/gsd-secure-phase 8`
+- Phase 9 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
+- Phase 10 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
+- Phase 11 UAT: `3/5` passed, `2/5` issues (diagnosed and fixed by 11-04)
+- Phase 11 gap-closure validation: 61 tests pass, TypeScript clean
 
 ## Next Actions
 
-1. Run `/gsd-secure-phase 8`
-2. Run `/gsd-discuss-phase 11`
-3. Plan and execute Phase 11
+1. Run `/gsd-verify-work 11` (re-test the two failing UAT items)
+2. Run `/gsd-secure-phase 8` (security review still pending)
+3. Discuss Phase 12
 
 ## Blockers / Concerns
 
@@ -56,8 +68,8 @@ Progress: [#######---] 54%
 
 ## Resume Point
 
-Resume from: `.planning/ROADMAP.md` -> Phase 11 discussion
-Next phase entry: `.planning/phases/10-graph-visual-language-search-focus/10-03-SUMMARY.md`
+Resume from: `.planning/ROADMAP.md` -> Phase 11 re-verification
+Next phase entry: `.planning/phases/11-2d-3d-interaction-parity/11-04-SUMMARY.md`
 
 ---
-*Last updated: 2026-04-13 after Phase 10 execution*
+*Last updated: 2026-04-14 after Phase 11 gap-closure execution*
