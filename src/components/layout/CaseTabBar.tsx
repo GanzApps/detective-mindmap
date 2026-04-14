@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   selectCases,
   selectOpenTabs,
@@ -19,6 +19,13 @@ export default function CaseTabBar() {
   const switchTab = useCaseStore((state) => state.switchTab);
 
   const [showCaseModal, setShowCaseModal] = useState(false);
+
+  // Listen for Ctrl+T new-case trigger from CaseShellLayout
+  useEffect(() => {
+    const handler = () => setShowCaseModal(true);
+    window.addEventListener('gsd:new-case', handler);
+    return () => window.removeEventListener('gsd:new-case', handler);
+  }, []);
 
   const homeActive = openTabs.length === 0;
 
