@@ -68,16 +68,6 @@ function buildFallbackMinimapState(
   };
 }
 
-// Converts a position that originated from the 3D renderer into 2D canvas
-// coordinate space. In 3D, SharedNodePosition.x = world X and
-// SharedNodePosition.y = world Z. Both axes use the same scale in 2D.
-// A factor of 1.5 maps the 3D tier-radius range (~0-400) to the 2D force
-// layout canvas range without clamping.
-function convert3DPositionTo2D(position: SharedNodePosition): SharedNodePosition {
-  const SCALE = 1.5;
-  return { x: position.x * SCALE, y: position.y * SCALE };
-}
-
 const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProps>(function GraphWorkspace({
   caseData,
   viewMode,
@@ -196,19 +186,18 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   }, [viewMode]);
 
   const handleUpdateNodePosition = useCallback((nodeId: string, position: SharedNodePosition) => {
-    const stored = viewMode === '3d' ? convert3DPositionTo2D(position) : position;
     setNodePositions((current) => {
       const existing = current[nodeId];
-      if (existing && existing.x === stored.x && existing.y === stored.y) {
+      if (existing && existing.x === position.x && existing.y === position.y) {
         return current;
       }
 
       return {
         ...current,
-        [nodeId]: stored,
+        [nodeId]: position,
       };
     });
-  }, [viewMode]);
+  }, []);
 
   return (
     <div data-testid="graph-workspace" className="relative">

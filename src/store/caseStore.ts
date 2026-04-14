@@ -74,6 +74,7 @@ interface CaseStoreState {
   ) => void;
   setViewMode: (viewMode: ViewMode) => void;
   setHighlightedEvidence: (evidenceId: string | null, entityIds: string[]) => void;
+  setGraphFocus: (selectedNodeId: string | null, highlightedEntityIds: string[]) => void;
   createCase: (input: CreateCaseInput) => Case;
   addEntity: (caseId: string, input: CreateEntityInput) => GraphNode | null;
   addConnection: (caseId: string, input: CreateConnectionInput) => GraphEdge | null;
@@ -157,6 +158,11 @@ export const useCaseStore = create<CaseStoreState>()(persist((set) => ({
   setViewMode: (viewMode) => set({ viewMode }),
   setHighlightedEvidence: (highlightedEvidenceId, highlightedEntityIds) => set({
     highlightedEvidenceId,
+    highlightedEntityIds,
+  }),
+  setGraphFocus: (selectedNodeId, highlightedEntityIds) => set({
+    selectedNodeId,
+    highlightedEvidenceId: null,
     highlightedEntityIds,
   }),
   createCase: (input) => {

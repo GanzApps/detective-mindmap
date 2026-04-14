@@ -12,6 +12,7 @@ import {
   type ZoomTransform,
 } from 'd3';
 import {
+  getBranchLinkedFocusIds,
   ENTITY_TYPE_COLOR,
   ENTITY_TYPE_SHAPE,
   type EntityType,
@@ -280,13 +281,14 @@ export function getGraphBounds(nodes: Array<Pick<ForceGraphNodeDatum, 'x' | 'y' 
 }
 
 export function getVisibleEdgeLabels(
+  nodes: ForceGraphNodeDatum[],
   edges: ForceGraphEdgeDatum[],
   options: DrawGraph2DOptions = {},
 ) {
   const transform = options.transform ?? DEFAULT_TRANSFORM;
   const focusSelectedNeighborhood = options.focusSelectedNeighborhood ?? true;
   const selectedNeighborhood = focusSelectedNeighborhood && options.selectedId
-    ? getConnectedNodeIds(edges, options.selectedId)
+    ? getBranchLinkedFocusNodeIds(nodes, edges, options.selectedId)
     : new Set<string>();
   const activeEntityTypes = options.activeEntityTypes
     ? new Set(options.activeEntityTypes)
@@ -375,7 +377,7 @@ export function drawGraph2D(
   const transform = options.transform ?? DEFAULT_TRANSFORM;
   const focusSelectedNeighborhood = options.focusSelectedNeighborhood ?? true;
   const selectedNeighborhood = focusSelectedNeighborhood && options.selectedId
-    ? getConnectedNodeIds(edges, options.selectedId)
+    ? getBranchLinkedFocusNodeIds(nodes, edges, options.selectedId)
     : new Set<string>();
   const activeEntityTypes = options.activeEntityTypes
     ? new Set(options.activeEntityTypes)
@@ -385,7 +387,7 @@ export function drawGraph2D(
     ...(options.searchMatchIds ?? []),
     ...(options.selectedId ? [options.selectedId, ...selectedNeighborhood] : []),
   ]);
-  const visibleEdgeLabels = new Set(options.showEdgeLabels === false ? [] : getVisibleEdgeLabels(edges, options));
+  const visibleEdgeLabels = new Set(options.showEdgeLabels === false ? [] : getVisibleEdgeLabels(nodes, edges, options));
   const selectedEdgeIds = new Set<string>();
 
   if (options.selectedId) {
@@ -553,20 +555,30 @@ export function drawGraph2D(
 
   ctx.restore();
 }
-function getConnectedNodeIds(edges: ForceGraphEdgeDatum[], nodeId: string) {
-  const result = new Set<string>();
-
-  for (const edge of edges) {
-    if (edge.source.id === nodeId) {
-      result.add(edge.target.id);
-    }
-
-    if (edge.target.id === nodeId) {
-      result.add(edge.source.id);
-    }
-  }
-
-  return result;
+function getBranchLinkedFocusNodeIds(
+  nodes: ForceGraphNodeDatum[],
+  edges: ForceGraphEdgeDatum[],
+  nodeId: string,
+) {
+  return getBranchLinkedFocusIds(
+    nodes.map((node) => ({
+      id: node.id,
+      label: node.label,
+      type: node.type,
+      status: node.status,
+      tier: node.tier,
+      parent: node.parent,
+      properties: node.properties,
+    })),
+    edges.map((edge) => ({
+    id: edge.id,
+    source: edge.source.id,
+    target: edge.target.id,
+    label: edge.label,
+    strength: edge.strength,
+  })),
+    nodeId,
+  );
 }
 
 function drawRoundedRect(

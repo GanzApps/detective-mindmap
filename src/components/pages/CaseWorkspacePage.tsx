@@ -1,8 +1,14 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { startTransition, useMemo, useRef, useState } from 'react';
 import { type GraphWorkspaceExportHandle } from '@/components/graph/GraphWorkspace';
 import CaseWorkspaceShell from '@/components/layout/CaseWorkspaceShell';
+import {
+  executeKnownIntent,
+  getQuickCommandSuggestions,
+  type AIResultPayload,
+  type CommandHistoryEntry,
+} from '@/lib/ai/knownIntents';
 import { useCaseById } from '@/hooks/useCaseData';
 import { resolveEvidenceHighlightIds } from '@/lib/data/evidenceHighlights';
 import { exportBoth, exportPDF, exportPNG } from '@/lib/export/reportExporter';
@@ -18,6 +24,7 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
   const viewMode = useCaseStore((state) => state.viewMode);
   const setViewMode = useCaseStore((state) => state.setViewMode);
   const setHighlightedEvidence = useCaseStore((state) => state.setHighlightedEvidence);
+  const setGraphFocus = useCaseStore((state) => state.setGraphFocus);
   const setSelectedNode = useCaseStore((state) => state.setSelectedNode);
   const addEntity = useCaseStore((state) => state.addEntity);
   const addConnection = useCaseStore((state) => state.addConnection);
@@ -25,6 +32,10 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
   const deleteConnection = useCaseStore((state) => state.deleteConnection);
   const graphWorkspaceRef = useRef<GraphWorkspaceExportHandle | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [aiResult, setAiResult] = useState<AIResultPayload | null>(null);
+  const [commandHistory, setCommandHistory] = useState<CommandHistoryEntry[]>([]);
+  const [commandStatus, setCommandStatus] = useState<'idle' | 'running' | 'complete' | 'failed'>('idle');
+  const [commandStatusMessage, setCommandStatusMessage] = useState('Known intents are ready. Type naturally or start with /.');
 
   if (isLoading) {
     return (
@@ -53,6 +64,10 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
     .find((file) => file.id === highlightedEvidenceId) ?? null;
   const activeEvidenceLabel = activeEvidenceFile ? getEvidenceLabel(activeEvidenceFile) : 'None selected';
   const selectedNodeLabel = resolvedCaseData.graph.nodes.find((node) => node.id === selectedNodeId)?.label ?? 'No active node';
+  const quickCommands = useMemo(
+    () => getQuickCommandSuggestions(resolvedCaseData, selectedNodeId),
+    [resolvedCaseData, selectedNodeId],
+  );
 
   async function handleExport(format: ExportFormat) {
     const exportSource = graphWorkspaceRef.current;
@@ -92,6 +107,31 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
     }
   }
 
+  function handleExecuteCommand(command: string) {
+    setCommandStatus('running');
+    setCommandStatusMessage(`Running: ${command}`);
+
+    startTransition(() => {
+      const execution = executeKnownIntent(command, {
+        caseData: resolvedCaseData,
+        selectedNodeId,
+      });
+
+      setCommandHistory((current) => [execution.history, ...current].slice(0, 6));
+
+      if (!execution.ok) {
+        setCommandStatus('failed');
+        setCommandStatusMessage(execution.message);
+        return;
+      }
+
+      setCommandStatus('complete');
+      setCommandStatusMessage(`Complete: ${execution.result.historyLabel}`);
+      setAiResult(execution.result);
+      setGraphFocus(execution.result.selectedNodeId, execution.result.highlightedNodeIds);
+    });
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
       <CaseWorkspaceShell
@@ -104,6 +144,9 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
         onSelectEvidence={(file) => {
           const ids = resolveEvidenceHighlightIds(caseData, file);
           setHighlightedEvidence(file.id, ids);
+          setAiResult(null);
+          setCommandStatus('idle');
+          setCommandStatusMessage(`Focused evidence: ${file.name}`);
           if (ids.length > 0) {
             setSelectedNode(ids[0]);
           }
@@ -120,14 +163,27 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
         onDeleteConnection={(connectionId) => {
           deleteConnection(caseId, connectionId);
         }}
-        onSelectNode={setSelectedNode}
+        onSelectNode={(nodeId) => {
+          setAiResult(null);
+          setSelectedNode(nodeId);
+        }}
         onClearHighlights={() => {
           setHighlightedEvidence(null, []);
           setSelectedNode(null);
+          setAiResult(null);
+          setCommandStatus('idle');
+          setCommandStatusMessage('Known intents are ready. Type naturally or start with /.');
         }}
         onExport={handleExport}
         isExporting={isExporting}
         graphWorkspaceRef={graphWorkspaceRef}
+        aiResult={aiResult}
+        aiQuickCommands={quickCommands}
+        commandHistory={commandHistory}
+        commandStatus={commandStatus}
+        commandStatusMessage={commandStatusMessage}
+        onExecuteCommand={handleExecuteCommand}
+        onDismissAIResult={() => setAiResult(null)}
       />
     </main>
   );

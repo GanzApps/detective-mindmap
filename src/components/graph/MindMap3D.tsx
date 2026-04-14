@@ -502,8 +502,10 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
                 ?? { x: 0, y: 0 };
               const yaw = cameraRef.current.rotY;
               const zoomFactor = Math.max(cameraRef.current.zoom, 0.35);
-              const worldDeltaX = ((deltaX * Math.cos(yaw)) + (deltaY * Math.sin(yaw))) / zoomFactor;
-              const worldDeltaY = ((deltaX * Math.sin(yaw)) - (deltaY * Math.cos(yaw))) / zoomFactor;
+              const cy = Math.cos(yaw);
+              const sy = Math.sin(yaw);
+              const worldDeltaX = ((cy * deltaX) + (sy * deltaY)) / zoomFactor;
+              const worldDeltaY = ((-sy * deltaX) + (cy * deltaY)) / zoomFactor;
               dragPositionOverridesRef.current[draggedNodeIdRef.current] = {
                 x: current.x + worldDeltaX,
                 y: current.y + worldDeltaY,

@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` and `.planning/ROADMAP.md`
 
 **Core value:** A detective must be able to open a case, understand the workspace immediately, focus the relevant network, and move between 2D and 3D without losing context.
-**Current focus:** Phase 11 gap-closure complete. Both drag bugs fixed, coordinate carry corrected. Ready for final verification.
+**Current focus:** Phase 12 is planned and ready to execute.
 
 ## Current Position
 
-Phase: 11 of 12
-Plan: 4 of 4 planned for current phase
-Status: Phase 11 gap-closure executed, awaiting final verification
-Last activity: 2026-04-14 - executed Phase 11 gap-closure plan (11-04)
+Phase: 12 of 12
+Plan: 3 of 3 planned for current phase
+Status: Phase 12 planned, awaiting execution
+Last activity: 2026-04-14 - planned Phase 12 AI command routing and workspace polish
 
-Progress: [########--] 60%
+Progress: [#########-] 75%
 
 ## Current Truth
 
@@ -35,12 +35,12 @@ Progress: [########--] 60%
   - preserving selected node plus focused neighborhood on view switch
   - gesture parity as close as practical
   - preserving node/focus state only, not exact camera framing
-- Phase 11 gap-closure (11-04) delivered:
-  - 2D drag fixed: `.subject()` now uses `pointer(event, canvas)` for canvas-relative coords
-  - 3D drag vertical inversion fixed: `worldDeltaY` formula negates `deltaY` to compensate screen-Y inversion
-  - 3D→2D position carry fixed: `convert3DPositionTo2D(SCALE=1.5)` converts 3D world (x,z) to 2D canvas (x,y)
-  - Screen-Y inversion regression test added to projection3d.test.ts
-  - 61 tests pass, TypeScript clean, build succeeds
+- Phase 11 gap fixes are implemented and the user reported final verification passed
+- Phase 12 decisions are now locked for:
+  - mixed natural-language + slash-command input with one known-intent parser
+  - separate AI-result mode in the existing right-side panel
+  - mixed static + context-aware quick command chips
+  - inline command status with lightweight history in the command surface
 
 ## Verification Status
 
@@ -48,14 +48,17 @@ Progress: [########--] 60%
 - Security review for Phase 8: not yet recorded
 - Phase 9 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
 - Phase 10 validation: `pnpm exec tsc --noEmit`, `pnpm exec jest --runInBand`, and `pnpm build` all passed
-- Phase 11 UAT: `3/5` passed, `2/5` issues (diagnosed and fixed by 11-04)
-- Phase 11 gap-closure validation: 61 tests pass, TypeScript clean
+- Phase 11 UAT: passed per final user verification
+- Phase 12 is now planned in three waves:
+  - 12-01 command surface and known-intent foundation
+  - 12-02 right-panel AI result mode
+  - 12-03 quick chips, history, and final polish
 
 ## Next Actions
 
-1. Run `/gsd-verify-work 11` (re-test the two failing UAT items)
+1. Run `/gsd-execute-phase 12`
 2. Run `/gsd-secure-phase 8` (security review still pending)
-3. Discuss Phase 12
+3. Verify Phase 12 after execution
 
 ## Blockers / Concerns
 
@@ -68,8 +71,8 @@ Progress: [########--] 60%
 
 ## Resume Point
 
-Resume from: `.planning/ROADMAP.md` -> Phase 11 re-verification
-Next phase entry: `.planning/phases/11-2d-3d-interaction-parity/11-04-SUMMARY.md`
+Resume from: `.planning/ROADMAP.md` -> Phase 12 execution
+Next phase entry: `.planning/phases/12-ai-command-routing-workspace-polish/12-01-PLAN.md`
 
 ---
-*Last updated: 2026-04-14 after Phase 11 gap-closure execution*
+*Last updated: 2026-04-14 after Phase 12 planning*

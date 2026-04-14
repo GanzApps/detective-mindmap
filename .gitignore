@@ -4,3 +4,5 @@ node_modules/
 .tmp-*
 tsconfig.tsbuildinfo
 .claude/settings.local.json
+.*
+!.planning

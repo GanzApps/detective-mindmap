@@ -115,6 +115,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const hoverNodeIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<PointerState>({ x: 0, y: 0 });
   const clickOriginRef = useRef<PointerState>({ x: 0, y: 0 });
+  const lastDragPointerRef = useRef<PointerState>({ x: 0, y: 0 });
   const pointerButtonRef = useRef<number>(0);
   const dragActivatedRef = useRef(false);
   const userAdjustedViewportRef = useRef(false);
@@ -408,6 +409,9 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         pointerDownRef.current = { x: event.x, y: event.y };
         const [sx, sy] = pointer(event.sourceEvent, canvas);
         clickOriginRef.current = { x: sx, y: sy };
+        lastDragPointerRef.current = { x: sx, y: sy };
+        subject.fx = subject.x;
+        subject.fy = subject.y;
       })
       .on('drag', (event: any, subject: any) => {
         if (!subject) {
@@ -432,8 +436,13 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         // Use actual screen position → world conversion (event.x/y in D3 drag
         // are subject-relative, not raw screen coords, so we read the source event).
         const [screenX, screenY] = pointer(event.sourceEvent, canvas);
-        const nextX = (screenX - transformRef.current.x) / transformRef.current.k;
-        const nextY = (screenY - transformRef.current.y) / transformRef.current.k;
+        const pointerDeltaX = screenX - lastDragPointerRef.current.x;
+        const pointerDeltaY = screenY - lastDragPointerRef.current.y;
+        lastDragPointerRef.current = { x: screenX, y: screenY };
+        const worldDeltaX = pointerDeltaX / transformRef.current.k;
+        const worldDeltaY = pointerDeltaY / transformRef.current.k;
+        const nextX = (subject.fx ?? subject.x ?? 0) + worldDeltaX;
+        const nextY = (subject.fy ?? subject.y ?? 0) + worldDeltaY;
         subject.x = nextX;
         subject.y = nextY;
         subject.fx = nextX;

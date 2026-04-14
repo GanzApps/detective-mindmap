@@ -11,6 +11,7 @@ import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
 import TimelineBar from '@/components/layout/TimelineBar';
 import WorkspaceAnalysisPanel from '@/components/layout/WorkspaceAnalysisPanel';
 import WorkspaceFiltersPanel from '@/components/layout/WorkspaceFiltersPanel';
+import { type AIResultPayload, type CommandHistoryEntry, type QuickCommandSuggestion } from '@/lib/ai/knownIntents';
 import { type Case, type EvidenceFile } from '@/lib/data/dataTypes';
 import { type ExportFormat } from '@/lib/export/exportTypes';
 import { getEvidenceLabel } from '@/store/caseStore';
@@ -39,6 +40,13 @@ export default function CaseWorkspaceShell({
   onExport,
   isExporting,
   graphWorkspaceRef,
+  aiResult,
+  aiQuickCommands,
+  commandHistory,
+  commandStatus,
+  commandStatusMessage,
+  onExecuteCommand,
+  onDismissAIResult,
 }: {
   caseData: Case;
   highlightedEvidenceId: string | null;
@@ -66,6 +74,13 @@ export default function CaseWorkspaceShell({
   onExport: (format: ExportFormat) => void;
   isExporting: boolean;
   graphWorkspaceRef: RefObject<GraphWorkspaceExportHandle | null>;
+  aiResult: AIResultPayload | null;
+  aiQuickCommands: QuickCommandSuggestion[];
+  commandHistory: CommandHistoryEntry[];
+  commandStatus: 'idle' | 'running' | 'complete' | 'failed';
+  commandStatusMessage: string;
+  onExecuteCommand: (command: string) => void;
+  onDismissAIResult: () => void;
 }) {
   const [showEntityModal, setShowEntityModal] = useState(false);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
@@ -269,7 +284,13 @@ export default function CaseWorkspaceShell({
               selectedNodeLabel={selectedNodeLabel}
               highlightedCount={highlightedEntityIds.length}
             />
-            <AICommandBar />
+            <AICommandBar
+              quickCommands={aiQuickCommands}
+              recentCommands={commandHistory}
+              status={commandStatus}
+              statusMessage={commandStatusMessage}
+              onExecute={onExecuteCommand}
+            />
           </div>
         </div>
 
@@ -277,7 +298,9 @@ export default function CaseWorkspaceShell({
           caseData={caseData}
           selectedNode={selectedNode}
           highlightedNodeIds={highlightedEntityIds}
+          aiResult={aiResult}
           onDismiss={() => onSelectNode(null)}
+          onDismissAIResult={onDismissAIResult}
         />
       </div>
 

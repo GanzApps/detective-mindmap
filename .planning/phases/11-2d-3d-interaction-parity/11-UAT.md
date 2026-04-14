@@ -5,8 +5,9 @@ source:
   - 11-01-SUMMARY.md
   - 11-02-SUMMARY.md
   - 11-03-SUMMARY.md
+  - 11-04-SUMMARY.md
 started: 2026-04-13T17:45:00+07:00
-updated: 2026-04-13T18:30:00+07:00
+updated: 2026-04-14T00:00:00+07:00
 ---
 
 ## Current Test
@@ -39,11 +40,25 @@ result: pass
 expected: In 3D, node colors and shapes should still be distinguishable by entity type, and the scene should remain understandable after the parity updates.
 result: pass
 
+## Re-test (after 11-04 gap-closure)
+
+### R1. 2D node drag (re-test of Test 1)
+expected: Click and hold any node in 2D, drag — node moves with cursor and pins at new position on release.
+result: issue
+reported: "fail - 2d node on click and drag not moving at all.. also the selected node that related to the link the children of linked node is dimmed. expected still highlighted.. on 3d works fine."
+severity: major
+
+### R2. 3D drag direction + coord carry (re-test of Test 2)
+expected: Drag upward in 3D moves node up. After drag + view switch, node appears in same visual quadrant in 2D.
+result: issue
+reported: "fail - actually if not rotating the drag is ok.. but if rotating the drag is inverted or not clean dragging.. i think position dragging need calculate of the rotated angle too."
+severity: major
+
 ## Summary
 
-total: 5
+total: 7
 passed: 3
-issues: 2
+issues: 4
 pending: 0
 skipped: 0
 
@@ -57,7 +72,7 @@ skipped: 0
   root_cause: "ForceGraph2D.tsx line 397 — drag .subject() callback passes raw MouseEvent.x/y (page coords) to hitTest2D instead of canvas-relative coords from pointer(event, canvas). hitTest2D applies the zoom transform (mx - transform.x) / transform.k expecting canvas coords, so the hit test always misses every node, .subject() returns null, and D3 drag never starts."
   artifacts:
     - path: "src/components/graph/ForceGraph2D.tsx"
-      issue: "line 397: .subject() uses event.x/event.y (page coords) instead of pointer(event, canvas) canvas-relative coords"
+      issue: "line 397: .subject() uses event.x, event.y (page coords) instead of pointer(event, canvas) canvas-relative coords"
   missing:
     - "Replace event.x, event.y in .subject() with const [cx, cy] = pointer(event, canvas) and pass cx, cy to hitTest2D"
   debug_session: ""
@@ -76,4 +91,22 @@ skipped: 0
   missing:
     - "Negate deltaY terms in MindMap3D drag handler: worldDeltaX = (deltaX*cos(yaw) + deltaY*sin(yaw))/zoom, worldDeltaY = (deltaX*sin(yaw) - deltaY*cos(yaw))/zoom"
     - "Add coordinate conversion in GraphWorkspace or projection3d.ts to map SharedNodePosition from 3D world (x, z) to 2D canvas (x, y) before passing to ForceGraph2D"
+  debug_session: ""
+- truth: "Click and hold any node in 2D, drag — node moves with cursor and pins at new position on release."
+  status: failed
+  reason: "User reported: fail - 2d node on click and drag not moving at all.. also the selected node that related to the link the children of linked node is dimmed. expected still highlighted.. on 3d works fine."
+  severity: major
+  test: R1
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+- truth: "Drag upward in 3D moves node up (not down). After drag + view switch, node appears in same visual quadrant in 2D."
+  status: failed
+  reason: "User reported: fail - actually if not rotating the drag is ok.. but if rotating the drag is inverted or not clean dragging.. i think position dragging need calculate of the rotated angle too."
+  severity: major
+  test: R2
+  root_cause: ""
+  artifacts: []
+  missing: []
   debug_session: ""

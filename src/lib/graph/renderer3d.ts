@@ -1,4 +1,9 @@
-import { ENTITY_TYPE_COLOR, type EntityType, type GraphData } from '@/lib/graph/graphTypes';
+import {
+  getBranchLinkedFocusIds,
+  ENTITY_TYPE_COLOR,
+  type EntityType,
+  type GraphData,
+} from '@/lib/graph/graphTypes';
 import {
   buildMindMap3DLayout,
   projectNodes3D,
@@ -51,19 +56,7 @@ function getConnectedNodeIds(graph: GraphData, selectedNodeId: string | null | u
     return null;
   }
 
-  const result = new Set<string>([selectedNodeId]);
-
-  for (const edge of graph.edges) {
-    if (edge.source === selectedNodeId) {
-      result.add(edge.target);
-    }
-
-    if (edge.target === selectedNodeId) {
-      result.add(edge.source);
-    }
-  }
-
-  return result;
+  return getBranchLinkedFocusIds(graph.nodes, graph.edges, selectedNodeId);
 }
 
 export function prepareFrame3D(
@@ -147,8 +140,8 @@ export function drawFrame3D(
     ctx.lineTo(target.sx, target.sy);
 
     if (isDimmed) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 0.7;
     } else if (isConnected) {
       const sourceColor = ENTITY_TYPE_COLOR[source.node.type];
       const targetColor = ENTITY_TYPE_COLOR[target.node.type];
@@ -159,8 +152,8 @@ export function drawFrame3D(
       ctx.lineWidth = 1.6;
     } else {
       const depth = Math.max(0, Math.min(1, (source.depth + target.depth) / 1200 + 0.5));
-      ctx.strokeStyle = rgbaFromHex(ENTITY_TYPE_COLOR[source.node.type], 0.07 + depth * 0.15);
-      ctx.lineWidth = 0.7;
+      ctx.strokeStyle = rgbaFromHex(ENTITY_TYPE_COLOR[source.node.type], 0.2 + depth * 0.18);
+      ctx.lineWidth = 1;
     }
 
     ctx.stroke();

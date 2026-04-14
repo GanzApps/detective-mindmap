@@ -129,6 +129,20 @@ describe('app shell smoke', () => {
         onExport={() => {}}
         isExporting={false}
         graphWorkspaceRef={createRef<GraphWorkspaceExportHandle>()}
+        aiResult={null}
+        aiQuickCommands={[
+          {
+            id: 'cmd-1',
+            prompt: '/find suspicious patterns',
+            label: 'Suspicious patterns',
+            kind: 'static',
+          },
+        ]}
+        commandHistory={[]}
+        commandStatus="idle"
+        commandStatusMessage="Known intents are ready."
+        onExecuteCommand={() => {}}
+        onDismissAIResult={() => {}}
       />,
     );
 

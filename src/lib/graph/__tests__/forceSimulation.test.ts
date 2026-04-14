@@ -98,7 +98,7 @@ describe('edge label selection', () => {
   it('keeps label rendering selective by default while preserving emphasized edges', () => {
     const graph = buildGraphFromCase(mockCases[0]);
     const bundle = createForceSimulation(graph.nodes, graph.edges);
-    const ids = getVisibleEdgeLabels(bundle.edges, {
+    const ids = getVisibleEdgeLabels(bundle.nodes, bundle.edges, {
       transform: { x: 0, y: 0, k: 1 },
       selectedId: 'node-002',
     });

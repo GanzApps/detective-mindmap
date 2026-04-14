@@ -85,6 +85,90 @@ export function getConnectedIds(edges: GraphEdge[], nodeId: string): Set<string>
   return result;
 }
 
+export function getConnectedNetworkIds(edges: GraphEdge[], nodeId: string): Set<string> {
+  const visited = new Set<string>([nodeId]);
+  const queue = [nodeId];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
+    for (const edge of edges) {
+      let neighbor: string | null = null;
+
+      if (edge.source === current) {
+        neighbor = edge.target;
+      } else if (edge.target === current) {
+        neighbor = edge.source;
+      }
+
+      if (!neighbor || visited.has(neighbor)) {
+        continue;
+      }
+
+      visited.add(neighbor);
+      queue.push(neighbor);
+    }
+  }
+
+  return visited;
+}
+
+export function getFamilyFocusIds(nodes: GraphNode[], nodeId: string): Set<string> {
+  const selectedNode = nodes.find((node) => node.id === nodeId);
+  if (!selectedNode) {
+    return new Set<string>();
+  }
+
+  const result = new Set<string>([selectedNode.id]);
+
+  for (const node of nodes) {
+    if (node.parent === selectedNode.id) {
+      result.add(node.id);
+    }
+  }
+
+  for (const node of nodes) {
+    if (node.id !== selectedNode.id && node.parent === selectedNode.parent) {
+      result.add(node.id);
+    }
+  }
+
+  return result;
+}
+
+export function getBranchLinkedFocusIds(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  nodeId: string,
+): Set<string> {
+  const selectedNode = nodes.find((node) => node.id === nodeId);
+  if (!selectedNode) {
+    return new Set<string>();
+  }
+
+  const directConnections = getConnectedIds(edges, nodeId);
+  const result = new Set<string>([nodeId]);
+
+  for (const node of nodes) {
+    if (!directConnections.has(node.id)) {
+      continue;
+    }
+
+    const isParent = selectedNode.parent === node.id;
+    const isChild = node.parent === selectedNode.id;
+    const isSibling = node.parent === selectedNode.parent && node.id !== selectedNode.id;
+
+    if (isParent || isChild || isSibling) {
+      result.add(node.id);
+    }
+  }
+
+  return result;
+}
+
 export function buildGraphFromCase(c: { graph: GraphData }): GraphData {
   return c.graph;
 }
