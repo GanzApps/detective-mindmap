@@ -7,6 +7,7 @@ import {
   type GraphEdge,
   type GraphNode,
 } from '@/lib/graph/graphTypes';
+import { type AIResultPayload, type CommandHistoryEntry } from '@/lib/ai/knownIntents';
 
 export type ViewMode = '2d' | '3d';
 
@@ -53,9 +54,47 @@ export interface CreateConnectionInput {
   strength?: number;
 }
 
+export interface TabWorkspaceState {
+  selectedNodeId: string | null;
+  activeFilters: EntityType[];
+  layerPreferences: LayerPreferences;
+  highlightedEvidenceId: string | null;
+  highlightedEntityIds: string[];
+  viewMode: ViewMode;
+  aiResult: AIResultPayload | null;
+  commandHistory: CommandHistoryEntry[];
+  commandStatus: 'idle' | 'running' | 'complete' | 'failed';
+  commandStatusMessage: string;
+}
+
+export function makeDefaultTabWorkspaceState(): TabWorkspaceState {
+  return {
+    selectedNodeId: null,
+    activeFilters: [...ENTITY_FILTER_OPTIONS],
+    layerPreferences: DEFAULT_LAYER_PREFERENCES,
+    highlightedEvidenceId: null,
+    highlightedEntityIds: [],
+    viewMode: '2d',
+    aiResult: null,
+    commandHistory: [],
+    commandStatus: 'idle',
+    commandStatusMessage: 'Known intents are ready. Type naturally or start with /.',
+  };
+}
+
+export interface OpenTab {
+  caseId: string;
+  title: string;
+}
+
 interface CaseStoreState {
   cases: Case[];
   activeCaseId: string | null;
+  // Tab management
+  openTabs: OpenTab[];
+  activeTabCaseId: string | null;
+  perTabState: Record<string, TabWorkspaceState>;
+  // Global (shared across tabs for backward compat)
   selectedNodeId: string | null;
   activeFilters: EntityType[];
   layerPreferences: LayerPreferences;
@@ -65,6 +104,16 @@ interface CaseStoreState {
   hydrateCases: (cases: Case[]) => void;
   upsertCase: (caseData: Case) => void;
   setActiveCase: (caseId: string | null) => void;
+  // Tab management actions
+  openTab: (caseId: string, title: string) => void;
+  closeTab: (caseId: string) => void;
+  switchTab: (caseId: string) => void;
+  setActiveTabState: <K extends keyof TabWorkspaceState>(
+    key: K,
+    value: TabWorkspaceState[K],
+  ) => void;
+  activeTabWorkspaceState: () => TabWorkspaceState;
+  // Existing actions (delegates to per-tab state when active)
   setSelectedNode: (nodeId: string | null) => void;
   setActiveFilters: (filters: EntityType[]) => void;
   toggleEntityFilter: (entityType: EntityType) => void;
@@ -116,9 +165,14 @@ const noopStorage = {
   removeItem: () => undefined,
 };
 
-export const useCaseStore = create<CaseStoreState>()(persist((set) => ({
+export const useCaseStore = create<CaseStoreState>()(persist((set, get) => ({
   cases: [],
   activeCaseId: null,
+  // Tab management init
+  openTabs: [],
+  activeTabCaseId: null,
+  perTabState: {},
+  // Global state (backward compat — reads from active tab when available)
   selectedNodeId: null,
   activeFilters: [...ENTITY_FILTER_OPTIONS],
   layerPreferences: DEFAULT_LAYER_PREFERENCES,
@@ -138,32 +192,156 @@ export const useCaseStore = create<CaseStoreState>()(persist((set) => ({
     };
   }),
   setActiveCase: (activeCaseId) => set({ activeCaseId }),
-  setSelectedNode: (selectedNodeId) => set({ selectedNodeId }),
-  setActiveFilters: (activeFilters) => set({ activeFilters: normalizeFilters(activeFilters) }),
-  toggleEntityFilter: (entityType) => set((state) => {
-    const isActive = state.activeFilters.includes(entityType);
-
+  // Tab management
+  openTab: (caseId, title) => set((state) => {
+    const exists = state.openTabs.some((tab) => tab.caseId === caseId);
+    if (exists) {
+      return { activeTabCaseId: caseId };
+    }
     return {
-      activeFilters: isActive
-        ? state.activeFilters.filter((type) => type !== entityType)
-        : [...state.activeFilters, entityType],
+      openTabs: [...state.openTabs, { caseId, title }],
+      activeTabCaseId: caseId,
+      perTabState: {
+        ...state.perTabState,
+        [caseId]: makeDefaultTabWorkspaceState(),
+      },
     };
   }),
-  setLayerPreference: (key, value) => set((state) => ({
-    layerPreferences: {
-      ...state.layerPreferences,
-      [key]: value,
-    },
-  })),
-  setViewMode: (viewMode) => set({ viewMode }),
-  setHighlightedEvidence: (highlightedEvidenceId, highlightedEntityIds) => set({
-    highlightedEvidenceId,
-    highlightedEntityIds,
+  closeTab: (caseId) => set((state) => {
+    const newTabs = state.openTabs.filter((tab) => tab.caseId !== caseId);
+    const newPerTab = { ...state.perTabState };
+    delete newPerTab[caseId];
+    const newActive = state.activeTabCaseId === caseId
+      ? (newTabs.length > 0 ? newTabs[newTabs.length - 1].caseId : null)
+      : state.activeTabCaseId;
+    return {
+      openTabs: newTabs,
+      activeTabCaseId: newActive,
+      perTabState: newPerTab,
+    };
   }),
-  setGraphFocus: (selectedNodeId, highlightedEntityIds) => set({
-    selectedNodeId,
-    highlightedEvidenceId: null,
-    highlightedEntityIds,
+  switchTab: (caseId) => set({ activeTabCaseId: caseId }),
+  setActiveTabState: (key, value) => set((state) => {
+    const activeId = state.activeTabCaseId;
+    if (!activeId) return {};
+    const current = state.perTabState[activeId] ?? makeDefaultTabWorkspaceState();
+    return {
+      perTabState: {
+        ...state.perTabState,
+        [activeId]: { ...current, [key]: value },
+      },
+    };
+  }),
+  activeTabWorkspaceState: () => {
+    const state = get();
+    if (!state.activeTabCaseId) return makeDefaultTabWorkspaceState();
+    return state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+  },
+  setSelectedNode: (selectedNodeId) => set((state) => {
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        selectedNodeId,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, selectedNodeId },
+        },
+      };
+    }
+    return { selectedNodeId };
+  }),
+  setActiveFilters: (activeFilters) => set((state) => {
+    const normalized = normalizeFilters(activeFilters);
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        activeFilters: normalized,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, activeFilters: normalized },
+        },
+      };
+    }
+    return { activeFilters: normalized };
+  }),
+  toggleEntityFilter: (entityType) => set((state) => {
+    const isActive = state.activeFilters.includes(entityType);
+    const newFilters = isActive
+      ? state.activeFilters.filter((type) => type !== entityType)
+      : [...state.activeFilters, entityType];
+    const normalized = normalizeFilters(newFilters);
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        activeFilters: normalized,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, activeFilters: normalized },
+        },
+      };
+    }
+    return { activeFilters: normalized };
+  }),
+  setLayerPreference: (key, value) => set((state) => {
+    const newPrefs = { ...state.layerPreferences, [key]: value };
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        layerPreferences: newPrefs,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, layerPreferences: newPrefs },
+        },
+      };
+    }
+    return { layerPreferences: newPrefs };
+  }),
+  setViewMode: (viewMode) => set((state) => {
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        viewMode,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, viewMode },
+        },
+      };
+    }
+    return { viewMode };
+  }),
+  setHighlightedEvidence: (highlightedEvidenceId, highlightedEntityIds) => set((state) => {
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        highlightedEvidenceId,
+        highlightedEntityIds,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: { ...current, highlightedEvidenceId, highlightedEntityIds },
+        },
+      };
+    }
+    return { highlightedEvidenceId, highlightedEntityIds };
+  }),
+  setGraphFocus: (selectedNodeId, highlightedEntityIds) => set((state) => {
+    if (state.activeTabCaseId) {
+      const current = state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+      return {
+        selectedNodeId,
+        highlightedEvidenceId: null,
+        highlightedEntityIds,
+        perTabState: {
+          ...state.perTabState,
+          [state.activeTabCaseId]: {
+            ...current,
+            selectedNodeId,
+            highlightedEvidenceId: null,
+            highlightedEntityIds,
+          },
+        },
+      };
+    }
+    return { selectedNodeId, highlightedEvidenceId: null, highlightedEntityIds };
   }),
   createCase: (input) => {
     const now = new Date().toISOString();
@@ -286,16 +464,25 @@ export const useCaseStore = create<CaseStoreState>()(persist((set) => ({
   partialize: (state) => ({
     cases: state.cases,
     activeCaseId: state.activeCaseId,
-    selectedNodeId: state.selectedNodeId,
     activeFilters: state.activeFilters,
     layerPreferences: state.layerPreferences,
     highlightedEvidenceId: state.highlightedEvidenceId,
     highlightedEntityIds: state.highlightedEntityIds,
     viewMode: state.viewMode,
+    // Tab persistence
+    openTabs: state.openTabs,
+    activeTabCaseId: state.activeTabCaseId,
+    perTabState: state.perTabState,
   }),
 }));
 
 export const selectCases = (state: CaseStoreState) => state.cases;
+export const selectOpenTabs = (state: CaseStoreState) => state.openTabs;
+export const selectActiveTabCaseId = (state: CaseStoreState) => state.activeTabCaseId;
+export const selectActiveTabWorkspaceState = (state: CaseStoreState) => {
+  if (!state.activeTabCaseId) return makeDefaultTabWorkspaceState();
+  return state.perTabState[state.activeTabCaseId] ?? makeDefaultTabWorkspaceState();
+};
 export const selectActiveFilters = (state: CaseStoreState) => state.activeFilters;
 export const selectLayerPreferences = (state: CaseStoreState) => state.layerPreferences;
 export const selectViewMode = (state: CaseStoreState) => state.viewMode;
