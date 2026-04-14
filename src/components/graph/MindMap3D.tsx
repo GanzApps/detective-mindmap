@@ -2,10 +2,12 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { drawFrame3D } from '@/lib/graph/renderer3d';
+import { getSearchMatches } from '@/lib/graph/forceSimulation';
 import { hitTest3D } from '@/lib/graph/hitTest3d';
 import { ENTITY_TYPE_COLOR, type EntityType, type GraphData, getConnectedIds } from '@/lib/graph/graphTypes';
 import { type GraphMinimapState } from '@/components/graph/graphMinimapTypes';
 import { ENTITY_FILTER_OPTIONS } from '@/store/caseStore';
+import { type SharedNodePosition } from '@/lib/graph/projection3d';
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -22,9 +24,15 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   selectedNodeId: string | null;
   highlightedNodeIds: string[];
   activeEntityTypes?: EntityType[];
+  searchQuery: string;
+  committedSearchNodeId: string | null;
+  nodePositions: Record<string, SharedNodePosition>;
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
+  onSearchQueryChange: (value: string) => void;
+  onCommitSearchSelection: (nodeId: string) => void;
+  onUpdateNodePosition: (nodeId: string, position: SharedNodePosition) => void;
   onSelectNode: (nodeId: string | null) => void;
   onMinimapStateChange?: (state: GraphMinimapState) => void;
 }>(function MindMap3D({
@@ -32,9 +40,15 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   selectedNodeId,
   highlightedNodeIds,
   activeEntityTypes = ENTITY_FILTER_OPTIONS,
+  searchQuery,
+  committedSearchNodeId,
+  nodePositions,
   showNodeLabels = true,
   focusSelectedNeighborhood = true,
   isActive,
+  onSearchQueryChange,
+  onCommitSearchSelection,
+  onUpdateNodePosition,
   onSelectNode,
   onMinimapStateChange,
 }, ref) {
@@ -49,7 +63,8 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const autoRotateRef = useRef(true);
   const draggingRef = useRef(false);
   const dragMovedRef = useRef(false);
-  const dragModeRef = useRef<'rotate' | 'pan' | null>(null);
+  const dragModeRef = useRef<'rotate' | 'pan' | 'node' | null>(null);
+  const draggedNodeIdRef = useRef<string | null>(null);
   const pointerRef = useRef({ x: 0, y: 0 });
   const needsRedrawRef = useRef(true);
   const hoverNodeIdRef = useRef<string | null>(null);
@@ -58,7 +73,14 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const activeEntityTypesRef = useRef<EntityType[]>(activeEntityTypes);
   const showNodeLabelsRef = useRef(showNodeLabels);
   const focusSelectedNeighborhoodRef = useRef(focusSelectedNeighborhood);
+  const nodePositionsRef = useRef(nodePositions);
+  const dragPositionOverridesRef = useRef<Record<string, SharedNodePosition>>({});
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true);
+  const searchMatches = getSearchMatches(graph.nodes, searchQuery);
+  const visibleSearchMatches = searchMatches.slice(0, 6);
+  const committedSearchNode = committedSearchNodeId
+    ? graph.nodes.find((node) => node.id === committedSearchNodeId) ?? null
+    : null;
 
   function emitMinimapState() {
     if (!onMinimapStateChange || !frameRef.current) {
@@ -130,6 +152,10 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         activeEntityTypes: activeEntityTypesRef.current,
         showLabels: showNodeLabelsRef.current,
         focusSelectedNeighborhood: focusSelectedNeighborhoodRef.current,
+        sharedPositions: {
+          ...nodePositionsRef.current,
+          ...dragPositionOverridesRef.current,
+        },
       },
     );
     needsRedrawRef.current = false;
@@ -203,11 +229,17 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   }, [focusSelectedNeighborhood]);
 
   useEffect(() => {
+    nodePositionsRef.current = nodePositions;
+    needsRedrawRef.current = true;
+  }, [nodePositions]);
+
+  useEffect(() => {
     autoRotateRef.current = autoRotateEnabled;
   }, [autoRotateEnabled]);
 
   useEffect(() => {
     needsRedrawRef.current = true;
+    dragPositionOverridesRef.current = {};
   }, [graph]);
 
   useEffect(() => {
@@ -308,8 +340,16 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
 
   useEffect(() => {
     function handleMouseUp() {
+      if (dragModeRef.current === 'node' && draggedNodeIdRef.current) {
+        const position = dragPositionOverridesRef.current[draggedNodeIdRef.current];
+        if (position) {
+          onUpdateNodePosition(draggedNodeIdRef.current, position);
+        }
+      }
+
       draggingRef.current = false;
       dragModeRef.current = null;
+      draggedNodeIdRef.current = null;
     }
 
     window.addEventListener('mouseup', handleMouseUp);
@@ -317,7 +357,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     return () => {
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [onUpdateNodePosition]);
 
   function updateHover(clientX: number, clientY: number) {
     const canvas = canvasRef.current;
@@ -332,23 +372,66 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     const y = clientY - rect.top;
     pointerRef.current = { x, y };
 
-    const hit = hitTest3D(frame.projectedNodes, x, y);
-    hoverNodeIdRef.current = hit?.id ?? null;
+    const hit = hitTest3D(frame.projectedNodes, x, y, 8, selectedNodeIdRef.current ?? undefined);
+    hoverNodeIdRef.current = hit.node?.id ?? null;
     needsRedrawRef.current = true;
     updateTooltip();
   }
 
   return (
     <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
             3D Renderer
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">MindMap3D</h2>
         </div>
-        <div className="rounded-shell-pill border border-shell-accent/20 bg-shell-accent-muted px-4 py-2 text-sm text-shell-text-primary">
-          {highlightedNodeIds.length} highlighted
+        <div className="flex items-start gap-3">
+          <div className="relative w-[280px]">
+            <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
+              <span className="text-xs uppercase tracking-[0.2em] text-shell-text-muted">Search nodes</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+                placeholder="Search nodes"
+                className="mt-2 w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
+              />
+            </label>
+            {searchQuery.trim() ? (
+              <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-shell-lg border border-shell-border bg-shell-surface shadow-shell-lg">
+                {visibleSearchMatches.length > 0 ? (
+                  <ul className="divide-y divide-shell-border">
+                    {visibleSearchMatches.map((node) => (
+                      <li key={node.id}>
+                        <button
+                          type="button"
+                          onClick={() => onCommitSearchSelection(node.id)}
+                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-shell-surface-raised"
+                        >
+                          <span>
+                            <span className="block text-sm font-medium text-shell-text-primary">{node.label}</span>
+                            <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-shell-text-muted">
+                              {node.type}
+                            </span>
+                          </span>
+                          <span className="text-xs text-shell-text-secondary">Focus</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-3 text-sm text-shell-text-secondary">
+                    No matching entities yet.
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+          <div className="rounded-shell-pill border border-shell-accent/20 bg-shell-accent-muted px-4 py-2 text-sm text-shell-text-primary">
+            {highlightedNodeIds.length} highlighted
+          </div>
         </div>
       </div>
 
@@ -365,8 +448,39 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
           onMouseDown={(event) => {
             draggingRef.current = true;
             dragMovedRef.current = false;
-            dragModeRef.current = event.button === 2 ? 'pan' : 'rotate';
             pointerRef.current = { x: event.nativeEvent.offsetX, y: event.nativeEvent.offsetY };
+            draggedNodeIdRef.current = null;
+
+            if (event.button === 2) {
+              dragModeRef.current = 'pan';
+              return;
+            }
+
+            const frame = frameRef.current;
+            if (!frame) {
+              dragModeRef.current = 'rotate';
+              return;
+            }
+
+            const hit = hitTest3D(
+              frame.projectedNodes,
+              event.nativeEvent.offsetX,
+              event.nativeEvent.offsetY,
+              8,
+              selectedNodeIdRef.current ?? undefined,
+            );
+
+            if (hit.node && hit.isSelectedNode) {
+              dragModeRef.current = 'node';
+              draggedNodeIdRef.current = hit.node.id;
+              const current = dragPositionOverridesRef.current[hit.node.id]
+                ?? nodePositionsRef.current[hit.node.id]
+                ?? { x: hit.node.x, y: hit.node.z };
+              dragPositionOverridesRef.current[hit.node.id] = current;
+              return;
+            }
+
+            dragModeRef.current = 'rotate';
           }}
           onMouseMove={(event) => {
             updateHover(event.clientX, event.clientY);
@@ -382,7 +496,19 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               dragMovedRef.current = true;
             }
 
-            if (dragModeRef.current === 'pan') {
+            if (dragModeRef.current === 'node' && draggedNodeIdRef.current) {
+              const current = dragPositionOverridesRef.current[draggedNodeIdRef.current]
+                ?? nodePositionsRef.current[draggedNodeIdRef.current]
+                ?? { x: 0, y: 0 };
+              const yaw = cameraRef.current.rotY;
+              const zoomFactor = Math.max(cameraRef.current.zoom, 0.35);
+              const worldDeltaX = ((deltaX * Math.cos(yaw)) + (deltaY * Math.sin(yaw))) / zoomFactor;
+              const worldDeltaY = ((deltaX * Math.sin(yaw)) - (deltaY * Math.cos(yaw))) / zoomFactor;
+              dragPositionOverridesRef.current[draggedNodeIdRef.current] = {
+                x: current.x + worldDeltaX,
+                y: current.y + worldDeltaY,
+              };
+            } else if (dragModeRef.current === 'pan') {
               cameraRef.current.offsetX += deltaX;
               cameraRef.current.offsetY += deltaY;
             } else {
@@ -419,14 +545,16 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
               frame.projectedNodes,
               event.clientX - rect.left,
               event.clientY - rect.top,
+              8,
+              selectedNodeIdRef.current ?? undefined,
             );
 
-            if (!hit) {
+            if (!hit.node) {
               onSelectNode(null);
-            } else if (selectedNodeIdRef.current === hit.id) {
+            } else if (selectedNodeIdRef.current === hit.node.id) {
               onSelectNode(null);
             } else {
-              onSelectNode(hit.id);
+              onSelectNode(hit.node.id);
             }
 
             autoRotateRef.current = false;
@@ -468,6 +596,23 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         </div>
         <div className="absolute bottom-3 left-3 text-xs text-shell-text-muted">
           Left drag to rotate · Right drag to pan · Scroll to zoom · Click node to highlight
+        </div>
+        <div className="absolute right-3 top-16 rounded-shell-lg border border-shell-border bg-shell-surface/90 px-4 py-3 text-right shadow-shell-sm">
+          <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">
+            Search status
+          </p>
+          <p className="mt-2 text-sm text-shell-text-primary">
+            {searchQuery.trim()
+              ? `${searchMatches.length} suggestion${searchMatches.length === 1 ? '' : 's'}`
+              : 'No search active'}
+          </p>
+          <p className="mt-1 text-xs text-shell-text-secondary">
+            {committedSearchNode
+              ? `Focused on ${committedSearchNode.label}`
+              : searchQuery.trim()
+                ? 'Choose a result to focus the graph'
+                : 'Select a node to inspect it'}
+          </p>
         </div>
       </div>
     </section>
