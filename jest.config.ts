@@ -14,7 +14,7 @@ const config: Config = {
     '**/*.test.ts',
     '**/*.test.tsx',
   ],
-  testPathIgnorePatterns: [],
+  testPathIgnorePatterns: ['/node_modules/', '/.claude/worktrees/'],
   modulePathIgnorePatterns: [],
   watchPathIgnorePatterns: [],
   transformIgnorePatterns: [
