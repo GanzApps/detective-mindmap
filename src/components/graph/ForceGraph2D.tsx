@@ -24,6 +24,7 @@ import {
 import { type EntityType, type GraphData } from '@/lib/graph/graphTypes';
 import { type GraphMinimapState } from '@/components/graph/graphMinimapTypes';
 import { ENTITY_FILTER_OPTIONS } from '@/store/caseStore';
+import { type SharedNodePosition } from '@/lib/graph/projection3d';
 
 interface PointerState {
   x: number;
@@ -65,12 +66,14 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   activeEntityTypes?: EntityType[];
   searchQuery: string;
   committedSearchNodeId: string | null;
+  nodePositions: Record<string, SharedNodePosition>;
   showEdgeLabels?: boolean;
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
   onSearchQueryChange: (value: string) => void;
   onCommitSearchSelection: (nodeId: string) => void;
+  onUpdateNodePosition: (nodeId: string, position: SharedNodePosition) => void;
   onSelectNode: (nodeId: string | null) => void;
   onMinimapStateChange?: (state: GraphMinimapState) => void;
 }>(function ForceGraph2D({
@@ -80,12 +83,14 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   activeEntityTypes = ENTITY_FILTER_OPTIONS,
   searchQuery,
   committedSearchNodeId,
+  nodePositions,
   showEdgeLabels = true,
   showNodeLabels = true,
   focusSelectedNeighborhood = true,
   isActive,
   onSearchQueryChange,
   onCommitSearchSelection,
+  onUpdateNodePosition,
   onSelectNode,
   onMinimapStateChange,
 }, ref) {
@@ -106,6 +111,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const showEdgeLabelsRef = useRef(showEdgeLabels);
   const showNodeLabelsRef = useRef(showNodeLabels);
   const focusSelectedNeighborhoodRef = useRef(focusSelectedNeighborhood);
+  const nodePositionsRef = useRef(nodePositions);
   const hoverNodeIdRef = useRef<string | null>(null);
   const pointerDownRef = useRef<PointerState>({ x: 0, y: 0 });
   const clickOriginRef = useRef<PointerState>({ x: 0, y: 0 });
@@ -296,6 +302,10 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   }, [focusSelectedNeighborhood]);
 
   useEffect(() => {
+    nodePositionsRef.current = nodePositions;
+  }, [nodePositions]);
+
+  useEffect(() => {
     searchMatchIdsRef.current = [];
     scheduleDraw();
   }, [searchMatches]);
@@ -384,7 +394,10 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     const dragBehavior: any = drag<HTMLCanvasElement, unknown>()
       .filter((event: MouseEvent) => event.button === 0)
       .clickDistance(5)
-      .subject((event: MouseEvent) => hitTest2D(nodesRef.current, event.x, event.y, transformRef.current))
+      .subject((event: MouseEvent) => {
+        const [cx, cy] = pointer(event, canvas);
+        return hitTest2D(nodesRef.current, cx, cy, transformRef.current);
+      })
       .on('start', (event: any, subject: any) => {
         if (!subject) {
           return;
@@ -419,8 +432,12 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         // Use actual screen position → world conversion (event.x/y in D3 drag
         // are subject-relative, not raw screen coords, so we read the source event).
         const [screenX, screenY] = pointer(event.sourceEvent, canvas);
-        subject.fx = (screenX - transformRef.current.x) / transformRef.current.k;
-        subject.fy = (screenY - transformRef.current.y) / transformRef.current.k;
+        const nextX = (screenX - transformRef.current.x) / transformRef.current.k;
+        const nextY = (screenY - transformRef.current.y) / transformRef.current.k;
+        subject.x = nextX;
+        subject.y = nextY;
+        subject.fx = nextX;
+        subject.fy = nextY;
         scheduleDraw();
         emitMinimapState();
       })
@@ -430,8 +447,14 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         }
 
         if (dragActivatedRef.current) {
-          subject.fx = null;
-          subject.fy = null;
+          subject.vx = 0;
+          subject.vy = 0;
+          subject.fx = subject.x;
+          subject.fy = subject.y;
+          onUpdateNodePosition(subject.id, {
+            x: subject.x,
+            y: subject.y,
+          });
           if (!event.active) {
             simulationRef.current?.alphaTarget(0);
           }
@@ -499,7 +522,37 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       zoomBehaviorRef.current = null;
       resizeCanvasRef.current = null;
     };
-  }, [onMinimapStateChange, onSelectNode]);
+  }, [onMinimapStateChange, onSelectNode, onUpdateNodePosition]);
+
+  useEffect(() => {
+    if (nodesRef.current.length === 0) {
+      return;
+    }
+
+    let changed = false;
+    for (const node of nodesRef.current) {
+      const override = nodePositionsRef.current[node.id];
+      if (!override) {
+        continue;
+      }
+
+      if (node.x !== override.x || node.y !== override.y || node.fx !== override.x || node.fy !== override.y) {
+        node.x = override.x;
+        node.y = override.y;
+        node.fx = override.x;
+        node.fy = override.y;
+        node.vx = 0;
+        node.vy = 0;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      simulationRef.current?.alphaTarget(0).restart();
+      scheduleDraw();
+      emitMinimapState();
+    }
+  }, [nodePositions]);
 
   useEffect(() => {
     const bundle = createForceSimulation(graph.nodes, graph.edges);
@@ -511,6 +564,20 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     bundle.simulation.on('tick', () => {
       scheduleDraw();
     });
+
+    for (const node of bundle.nodes) {
+      const override = nodePositionsRef.current[node.id];
+      if (!override) {
+        continue;
+      }
+
+      node.x = override.x;
+      node.y = override.y;
+      node.fx = override.x;
+      node.fy = override.y;
+      node.vx = 0;
+      node.vy = 0;
+    }
 
     window.requestAnimationFrame(() => {
       applyFitTransform();
