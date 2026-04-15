@@ -133,7 +133,7 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className="h-full bg-shell-bg text-slate-100">
       <CaseWorkspaceShell
         caseData={resolvedCaseData}
         highlightedEvidenceId={highlightedEvidenceId}

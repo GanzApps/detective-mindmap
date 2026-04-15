@@ -204,7 +204,7 @@ export default function CaseWorkspaceShell({
   );
 
   return (
-    <div className="flex min-h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col">
       {/* 1. Compact Toolbar — strip style */}
       <div className="flex shrink-0 items-center justify-between border-b border-shell-border bg-shell-surface px-3 py-1.5">
         <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export default function CaseWorkspaceShell({
       </div>
 
       {/* 2. Middle row: Sidebar + Graph + Analysis */}
-      <div className="flex flex-1 flex-row">
+      <div className="flex min-h-0 flex-1 flex-row">
         {/* Sidebar — collapsible, fixed width when open */}
         {sidebarOpen && (
           <div className="flex w-80 shrink-0 flex-col border-r border-shell-border bg-shell-surface">
@@ -364,7 +364,7 @@ export default function CaseWorkspaceShell({
         )}
 
         {/* Center: Graph + Timeline + AI Bar */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Graph canvas — fills available space, no fixed minimum */}
           <div className="min-h-0 flex-1 bg-shell-bg">
             <GraphWorkspace

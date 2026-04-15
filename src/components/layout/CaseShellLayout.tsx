@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import CaseTabBar from '@/components/layout/CaseTabBar';
 import CaseListPage from '@/components/pages/CaseListPage';
@@ -39,16 +39,29 @@ export default function CaseShellLayout() {
     }
   }, [openTabs.length, activeTabCaseId, router]);
 
-  // Open a tab if the URL has a tab param and it's not already open
+  // Latest-ref so the URL effect always sees current store state
+  // without making openTabs/cases a dep (which causes circular re-opens).
+  const latestRef = useRef({ openTabs, cases, activeTabCaseId, switchTab, openTab });
+  useEffect(() => {
+    latestRef.current = { openTabs, cases, activeTabCaseId, switchTab, openTab };
+  });
+
+  // Sync URL-driven tab selection — only when the URL param itself changes.
   const tabFromUrl = searchParams.get('tab');
-  useMemo(() => {
-    if (tabFromUrl && !openTabs.some((t) => t.caseId === tabFromUrl)) {
-      const caseData = cases.find((c) => c.id === tabFromUrl);
-      if (caseData) {
-        openTab(caseData.id, caseData.name);
-      }
+  useEffect(() => {
+    if (!tabFromUrl) return;
+    const { openTabs: tabs, cases: allCases, activeTabCaseId: activeId, switchTab: sw, openTab: op } = latestRef.current;
+
+    const existingTab = tabs.find((tab) => tab.caseId === tabFromUrl);
+    if (existingTab) {
+      if (activeId !== tabFromUrl) sw(tabFromUrl);
+      return;
     }
-  }, [tabFromUrl, openTabs, cases, openTab]);
+
+    const caseData = allCases.find((c) => c.id === tabFromUrl);
+    if (caseData) op(caseData.id, caseData.name);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabFromUrl]);
 
   // Task 8: Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -92,8 +105,8 @@ export default function CaseShellLayout() {
       {/* Tab bar — always visible */}
       <CaseTabBar />
 
-      {/* Content area — scrollable */}
-      <div className="flex-1 overflow-auto">
+      {/* Content area — fills remaining height, no page-level scroll */}
+      <div className="min-h-0 flex-1 overflow-hidden">
         {hasOpenTabs && activeTabCaseId ? (
           <CaseWorkspacePage caseId={activeTabCaseId} />
         ) : (
