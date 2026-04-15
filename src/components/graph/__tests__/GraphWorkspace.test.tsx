@@ -81,6 +81,8 @@ describe('GraphWorkspace', () => {
         viewMode="2d"
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002', 'node-007']}
+        searchQuery="Marco"
+        committedSearchNodeId="node-002"
         onSetViewMode={() => {}}
         onSelectNode={() => {}}
       />,
@@ -89,7 +91,6 @@ describe('GraphWorkspace', () => {
     expect(screen.getByTestId('force-graph-2d')).toBeInTheDocument();
     expect(screen.getByTestId('mindmap-3d')).toBeInTheDocument();
     expect(screen.getByLabelText('Workspace minimap')).toBeInTheDocument();
-    expect(screen.getByText('Active node: Marco Delgado')).toBeInTheDocument();
   });
 
   it('dismisses the shared panel on Escape', () => {
@@ -101,6 +102,8 @@ describe('GraphWorkspace', () => {
         viewMode="3d"
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002']}
+        searchQuery=""
+        committedSearchNodeId={null}
         onSetViewMode={() => {}}
         onSelectNode={onSelectNode}
       />,
@@ -121,6 +124,8 @@ describe('GraphWorkspace', () => {
         viewMode="3d"
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002']}
+        searchQuery=""
+        committedSearchNodeId={null}
         onSetViewMode={() => {}}
         onSelectNode={() => {}}
       />,

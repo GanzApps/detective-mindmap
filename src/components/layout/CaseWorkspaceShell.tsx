@@ -13,6 +13,7 @@ import WorkspaceFiltersPanel from '@/components/layout/WorkspaceFiltersPanel';
 import { type AIResultPayload, type CommandHistoryEntry, type QuickCommandSuggestion } from '@/lib/ai/knownIntents';
 import { type Case, type EvidenceFile } from '@/lib/data/dataTypes';
 import { type ExportFormat } from '@/lib/export/exportTypes';
+import { getSearchMatches } from '@/lib/graph/forceSimulation';
 import { getEvidenceLabel } from '@/store/caseStore';
 import { type EntityStatus, type EntityType } from '@/lib/graph/graphTypes';
 import {
@@ -20,7 +21,7 @@ import {
   selectLayerPreferences,
   useCaseStore,
 } from '@/store/caseStore';
-import { type RefObject, useMemo, useState } from 'react';
+import { type RefObject, useEffect, useMemo, useState } from 'react';
 
 export default function CaseWorkspaceShell({
   caseData,
@@ -88,6 +89,8 @@ export default function CaseWorkspaceShell({
   // Collapsible panels — default: sidebar open, analysis panel hidden
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
   // Expandable sections inside sidebar
   const [entitiesExpanded, setEntitiesExpanded] = useState(false);
   const [connectionsExpanded, setConnectionsExpanded] = useState(false);
@@ -108,6 +111,14 @@ export default function CaseWorkspaceShell({
 
     return counts;
   }, [caseData.graph.nodes]);
+  const searchMatches = useMemo(
+    () => getSearchMatches(caseData.graph.nodes, searchQuery),
+    [caseData.graph.nodes, searchQuery],
+  );
+  const visibleSearchMatches = useMemo(
+    () => searchMatches.slice(0, 6),
+    [searchMatches],
+  );
 
   const activeEvidenceFile = caseData.evidence
     .flatMap((category) => category.files)
@@ -117,6 +128,8 @@ export default function CaseWorkspaceShell({
     viewMode,
     selectedNodeId,
     highlightedNodeIds: highlightedEntityIds,
+    searchQuery,
+    committedSearchNodeId,
     onSetViewMode,
     onSelectNode,
   };
@@ -130,6 +143,65 @@ export default function CaseWorkspaceShell({
     from: evidenceDates[0]?.slice(0, 10) ?? caseData.createdAt.slice(0, 10),
     to: evidenceDates[evidenceDates.length - 1]?.slice(0, 10) ?? caseData.updatedAt.slice(0, 10),
   };
+
+  useEffect(() => {
+    setSearchQuery('');
+    setCommittedSearchNodeId(null);
+  }, [caseData.id]);
+
+  useEffect(() => {
+    if (selectedNodeId === null) {
+      setCommittedSearchNodeId(null);
+    }
+  }, [selectedNodeId]);
+
+  const searchPanel = (
+    <div className="relative">
+      <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
+        <span className="sr-only">Search graph nodes</span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search nodes"
+          className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
+        />
+      </label>
+      {searchQuery.trim() ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-shell-lg border border-shell-border bg-shell-surface shadow-shell-lg">
+          {visibleSearchMatches.length > 0 ? (
+            <ul className="divide-y divide-shell-border">
+              {visibleSearchMatches.map((node) => (
+                <li key={node.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCommittedSearchNodeId(node.id);
+                      setSearchQuery(node.label);
+                      onSelectNode(node.id);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-shell-surface-raised"
+                  >
+                    <span>
+                      <span className="block text-sm font-medium text-shell-text-primary">{node.label}</span>
+                      <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-shell-text-muted">
+                        {node.type}
+                      </span>
+                    </span>
+                    <span className="text-xs text-shell-text-secondary">Focus</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-4 py-3 text-sm text-shell-text-secondary">
+              No matching entities yet.
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -210,6 +282,7 @@ export default function CaseWorkspaceShell({
                 evidence={caseData.evidence}
                 selectedEvidenceId={highlightedEvidenceId}
                 onEvidenceSelect={onSelectEvidence}
+                searchPanel={searchPanel}
                 filtersPanel={(
                   <WorkspaceFiltersPanel
                     activeFilters={activeFilters}

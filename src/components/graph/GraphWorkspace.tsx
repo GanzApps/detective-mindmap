@@ -32,6 +32,8 @@ interface GraphWorkspaceProps {
   viewMode: ViewMode;
   selectedNodeId: string | null;
   highlightedNodeIds: string[];
+  searchQuery: string;
+  committedSearchNodeId: string | null;
   onSetViewMode: (viewMode: ViewMode) => void;
   onSelectNode: (nodeId: string | null) => void;
 }
@@ -73,11 +75,11 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   viewMode,
   selectedNodeId,
   highlightedNodeIds,
+  searchQuery,
+  committedSearchNodeId,
   onSetViewMode,
   onSelectNode,
 }, ref) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
   const [nodePositions, setNodePositions] = useState<Record<string, SharedNodePosition>>({});
   const fallbackMinimapState = useMemo(
     () => buildFallbackMinimapState(caseData.graph, viewMode, selectedNodeId),
@@ -90,26 +92,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   const mindMapContainerRef = useRef<HTMLDivElement | null>(null);
   const activeFilters = useCaseStore(selectActiveFilters);
   const layerPreferences = useCaseStore(selectLayerPreferences);
-  const selectedNode = useMemo(
-    () => caseData.graph.nodes.find((node) => node.id === selectedNodeId) ?? null,
-    [caseData.graph.nodes, selectedNodeId],
-  );
   const activeEntityTypes = useMemo(
     () => [...activeFilters],
     [activeFilters],
   );
 
   useEffect(() => {
-    setSearchQuery('');
-    setCommittedSearchNodeId(null);
     setNodePositions({});
   }, [caseData.id]);
-
-  useEffect(() => {
-    if (selectedNodeId === null) {
-      setCommittedSearchNodeId(null);
-    }
-  }, [selectedNodeId]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -159,19 +149,8 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   }), [viewMode]);
 
   const handleSelectNode = useCallback((nodeId: string | null) => {
-    if (nodeId === null) {
-      setCommittedSearchNodeId(null);
-    }
-
     onSelectNode(nodeId);
   }, [onSelectNode]);
-
-  const handleCommitSearchSelection = useCallback((nodeId: string) => {
-    const match = caseData.graph.nodes.find((node) => node.id === nodeId);
-    setCommittedSearchNodeId(nodeId);
-    setSearchQuery(match?.label ?? '');
-    onSelectNode(nodeId);
-  }, [caseData.graph.nodes, onSelectNode]);
 
   const handle2DMinimapStateChange = useCallback((nextState: GraphMinimapState) => {
     if (viewMode === '2d') {
@@ -205,6 +184,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
       <div className="relative min-h-0 flex-1">
         <div
           ref={forceGraphContainerRef}
+          className="h-full"
           style={{ display: viewMode === '2d' ? 'block' : 'none' }}
         >
           <ForceGraph2D
@@ -220,8 +200,6 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '2d'}
-            onSearchQueryChange={setSearchQuery}
-            onCommitSearchSelection={handleCommitSearchSelection}
             onUpdateNodePosition={handleUpdateNodePosition}
             onSelectNode={handleSelectNode}
             onMinimapStateChange={handle2DMinimapStateChange}
@@ -229,6 +207,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
         </div>
         <div
           ref={mindMapContainerRef}
+          className="h-full"
           style={{ display: viewMode === '3d' ? 'block' : 'none' }}
         >
           <MindMap3D
@@ -243,8 +222,6 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             showNodeLabels={layerPreferences.showNodeLabels}
             focusSelectedNeighborhood={layerPreferences.focusSelectedNeighborhood}
             isActive={viewMode === '3d'}
-            onSearchQueryChange={setSearchQuery}
-            onCommitSearchSelection={handleCommitSearchSelection}
             onUpdateNodePosition={handleUpdateNodePosition}
             onSelectNode={handleSelectNode}
             onMinimapStateChange={handle3DMinimapStateChange}
@@ -252,12 +229,6 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
         </div>
 
         <GraphMinimap state={minimapState} />
-
-        {selectedNode ? (
-          <div className="pointer-events-none absolute left-6 top-6 z-10 rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-4 py-2 text-sm text-shell-text-primary shadow-shell-sm">
-            Active node: {selectedNode.label}
-          </div>
-        ) : null}
       </div>
     </div>
   );

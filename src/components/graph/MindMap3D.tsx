@@ -30,8 +30,6 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
-  onSearchQueryChange: (value: string) => void;
-  onCommitSearchSelection: (nodeId: string) => void;
   onUpdateNodePosition: (nodeId: string, position: SharedNodePosition) => void;
   onSelectNode: (nodeId: string | null) => void;
   onMinimapStateChange?: (state: GraphMinimapState) => void;
@@ -46,8 +44,6 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   showNodeLabels = true,
   focusSelectedNeighborhood = true,
   isActive,
-  onSearchQueryChange,
-  onCommitSearchSelection,
   onUpdateNodePosition,
   onSelectNode,
   onMinimapStateChange,
@@ -77,9 +73,11 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   const dragPositionOverridesRef = useRef<Record<string, SharedNodePosition>>({});
   const [autoRotateEnabled, setAutoRotateEnabled] = useState(true);
   const searchMatches = getSearchMatches(graph.nodes, searchQuery);
-  const visibleSearchMatches = searchMatches.slice(0, 6);
   const committedSearchNode = committedSearchNodeId
     ? graph.nodes.find((node) => node.id === committedSearchNodeId) ?? null
+    : null;
+  const selectedNode = selectedNodeId
+    ? graph.nodes.find((node) => node.id === selectedNodeId) ?? null
     : null;
 
   function emitMinimapState() {
@@ -379,62 +377,11 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
   }
 
   return (
-    <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">MindMap3D</h2>
-        </div>
-        <div className="flex items-start gap-3">
-          <div className="relative w-[280px]">
-            <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => onSearchQueryChange(event.target.value)}
-                placeholder="Search nodes"
-                className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
-              />
-            </label>
-            {searchQuery.trim() ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-shell-lg border border-shell-border bg-shell-surface shadow-shell-lg">
-                {visibleSearchMatches.length > 0 ? (
-                  <ul className="divide-y divide-shell-border">
-                    {visibleSearchMatches.map((node) => (
-                      <li key={node.id}>
-                        <button
-                          type="button"
-                          onClick={() => onCommitSearchSelection(node.id)}
-                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-shell-surface-raised"
-                        >
-                          <span>
-                            <span className="block text-sm font-medium text-shell-text-primary">{node.label}</span>
-                            <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-                              {node.type}
-                            </span>
-                          </span>
-                          <span className="text-xs text-shell-text-secondary">Focus</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-3 text-sm text-shell-text-secondary">
-                    No matching entities yet.
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-          <div className="rounded-shell-pill border border-shell-accent/20 bg-shell-accent-muted px-4 py-2 text-sm text-shell-text-primary">
-            {highlightedNodeIds.length} highlighted
-          </div>
-        </div>
-      </div>
-
-      <div
-        ref={wrapperRef}
-        className="relative h-[620px] overflow-hidden rounded-shell-xl border border-shell-border bg-shell-bg"
-      >
+    <div
+      data-testid="graph-renderer-3d"
+      ref={wrapperRef}
+      className="relative h-full overflow-hidden bg-shell-bg"
+    >
         <canvas
           ref={canvasRef}
           className="block h-full w-full cursor-grab active:cursor-grabbing"
@@ -591,29 +538,31 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
           >
             {autoRotateEnabled ? 'Pause' : 'Rotate'}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              cameraRef.current = { rotX: 0.28, rotY: 0.55, zoom: 1, offsetX: 0, offsetY: 0 };
+              hoverNodeIdRef.current = null;
+              autoRotateRef.current = false;
+              setAutoRotateEnabled(false);
+              needsRedrawRef.current = true;
+              emitMinimapState();
+            }}
+            className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-3 py-1.5 text-xs text-shell-text-secondary transition hover:bg-shell-surface hover:text-shell-text-primary"
+          >
+            Fit
+          </button>
         </div>
+        {selectedNode ? (
+          <div className="pointer-events-none absolute left-3 top-14 rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1.5 text-sm text-shell-text-primary shadow-shell-sm">
+            <span className="text-shell-text-secondary">Active node:</span>{' '}
+            <span className="font-medium">{selectedNode.label}</span>
+          </div>
+        ) : null}
         <div className="absolute bottom-3 left-3 text-xs text-shell-text-muted">
           Left drag to rotate · Right drag to pan · Scroll to zoom · Click node to highlight
         </div>
-        <div className="absolute right-3 top-16 rounded-shell-lg border border-shell-border bg-shell-surface/90 px-4 py-3 text-right shadow-shell-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-            Search status
-          </p>
-          <p className="mt-2 text-sm text-shell-text-primary">
-            {searchQuery.trim()
-              ? `${searchMatches.length} suggestion${searchMatches.length === 1 ? '' : 's'}`
-              : 'No search active'}
-          </p>
-          <p className="mt-1 text-xs text-shell-text-secondary">
-            {committedSearchNode
-              ? `Focused on ${committedSearchNode.label}`
-              : searchQuery.trim()
-                ? 'Choose a result to focus the graph'
-                : 'Select a node to inspect it'}
-          </p>
-        </div>
       </div>
-    </section>
   );
 });
 

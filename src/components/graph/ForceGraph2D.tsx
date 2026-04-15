@@ -71,8 +71,6 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   isActive: boolean;
-  onSearchQueryChange: (value: string) => void;
-  onCommitSearchSelection: (nodeId: string) => void;
   onUpdateNodePosition: (nodeId: string, position: SharedNodePosition) => void;
   onSelectNode: (nodeId: string | null) => void;
   onMinimapStateChange?: (state: GraphMinimapState) => void;
@@ -88,8 +86,6 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   showNodeLabels = true,
   focusSelectedNeighborhood = true,
   isActive,
-  onSearchQueryChange,
-  onCommitSearchSelection,
   onUpdateNodePosition,
   onSelectNode,
   onMinimapStateChange,
@@ -122,7 +118,6 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   const viewportRef = useRef({ width: 0, height: 0, dpr: 1 });
 
   const searchMatches = useMemo(() => getSearchMatches(graph.nodes, searchQuery), [graph.nodes, searchQuery]);
-  const visibleSearchMatches = useMemo(() => searchMatches.slice(0, 6), [searchMatches]);
   const committedSearchNode = useMemo(
     () => (committedSearchNodeId
       ? graph.nodes.find((node) => node.id === committedSearchNodeId) ?? null
@@ -604,100 +599,37 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   }, [graph, onMinimapStateChange]);
 
   return (
-    <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
-      <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
-            2D Renderer
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">ForceGraph2D</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-[minmax(240px,320px)_auto]">
-          <div className="relative">
-            <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
-              placeholder="Search nodes"
-              className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
-            />
-            </label>
-            {searchQuery.trim() ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-10 overflow-hidden rounded-shell-lg border border-shell-border bg-shell-surface shadow-shell-lg">
-                {visibleSearchMatches.length > 0 ? (
-                  <ul className="divide-y divide-shell-border">
-                    {visibleSearchMatches.map((node) => (
-                      <li key={node.id}>
-                        <button
-                          type="button"
-                          onClick={() => onCommitSearchSelection(node.id)}
-                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-shell-surface-raised"
-                        >
-                          <span>
-                            <span className="block text-sm font-medium text-shell-text-primary">{node.label}</span>
-                            <span className="mt-1 block text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-                              {node.type}
-                            </span>
-                          </span>
-                          <span className="text-xs text-shell-text-secondary">Focus</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-3 text-sm text-shell-text-secondary">
-                    No matching entities yet.
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              userAdjustedViewportRef.current = false;
-              applyFitTransform();
-            }}
-            className="rounded-shell-lg border border-shell-accent/25 bg-shell-accent-muted px-4 py-3 text-sm font-semibold text-shell-text-primary transition hover:border-shell-accent"
-          >
-            Zoom to Fit
-          </button>
-        </div>
+    <div
+      data-testid="graph-renderer-2d"
+      ref={wrapperRef}
+      className="relative h-full overflow-hidden bg-shell-bg"
+    >
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full cursor-grab active:cursor-grabbing"
+      />
+      <div className="pointer-events-none absolute bottom-4 left-4 rounded-shell-pill border border-shell-border bg-shell-surface/80 px-3 py-1.5 text-xs text-shell-text-muted backdrop-blur">
+        Drag nodes to reposition · Drag empty space to pan · Scroll to zoom
       </div>
-
-      <div
-        ref={wrapperRef}
-        className="relative h-[620px] overflow-hidden rounded-shell-xl border border-shell-border bg-shell-bg"
-      >
-        <canvas
-          ref={canvasRef}
-          className="block h-full w-full cursor-grab active:cursor-grabbing"
-        />
-        <div className="pointer-events-none absolute bottom-4 left-4 rounded-shell-pill border border-shell-border bg-shell-surface/80 px-3 py-1.5 text-xs text-shell-text-muted backdrop-blur">
-          Drag nodes to reposition · Drag empty space to pan · Scroll to zoom
+      {selectedNode ? (
+        <div className="pointer-events-none absolute left-4 top-4 rounded-shell-pill border border-shell-accent/30 bg-shell-accent-muted px-3 py-1.5 text-sm text-shell-text-primary shadow-shell-sm">
+          <span className="text-shell-text-secondary">Active node:</span>{' '}
+          <span className="font-medium">{selectedNode.label}</span>
         </div>
-        <div className="absolute right-4 top-4 rounded-shell-lg border border-shell-border bg-shell-surface/90 px-4 py-3 text-right shadow-shell-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">
-            Search status
-          </p>
-          <p className="mt-2 text-sm text-shell-text-primary">
-            {searchQuery.trim()
-              ? `${searchMatches.length} suggestion${searchMatches.length === 1 ? '' : 's'}`
-              : 'No search active'}
-          </p>
-          <p className="mt-1 text-xs text-shell-text-secondary">
-            {committedSearchNode
-              ? `Focused on ${committedSearchNode.label}`
-              : searchQuery.trim()
-                ? 'Choose a result to focus the graph'
-                : selectedNode
-                  ? selectedNode.label
-                : 'Select a node to inspect it'}
-          </p>
-        </div>
+      ) : null}
+      <div className="absolute right-4 top-4 flex flex-col items-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            userAdjustedViewportRef.current = false;
+            applyFitTransform();
+          }}
+          className="rounded-shell-lg border border-shell-accent/25 bg-shell-accent-muted px-3 py-1.5 text-xs font-semibold text-shell-text-primary transition hover:border-shell-accent"
+        >
+          Zoom to Fit
+        </button>
       </div>
-    </section>
+    </div>
   );
 });
 

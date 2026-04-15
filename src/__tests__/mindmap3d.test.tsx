@@ -13,14 +13,12 @@ describe('MindMap3D', () => {
         committedSearchNodeId={null}
         nodePositions={{}}
         isActive
-        onSearchQueryChange={() => {}}
-        onCommitSearchSelection={() => {}}
         onUpdateNodePosition={() => {}}
         onSelectNode={() => {}}
       />,
     );
 
-    expect(html).toContain('MindMap3D');
+    expect(html).toContain('graph-renderer-3d');
     expect(html).toContain('Reset');
     expect(html).toContain('Pause');
     expect(html).toContain('Left drag to rotate');

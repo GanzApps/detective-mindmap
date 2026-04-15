@@ -15,7 +15,6 @@ describe('EvidenceSidebar', () => {
       />,
     );
 
-    expect(screen.getByText('Investigation inputs')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Raw Evidence' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Filters & Layers' })).toBeInTheDocument();
     expect(screen.getByText('Device Data')).toBeInTheDocument();

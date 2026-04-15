@@ -3,7 +3,7 @@ import ForceGraph2D from '@/components/graph/ForceGraph2D';
 import { mockCases } from '@/lib/data/mockCases';
 
 describe('ForceGraph2D', () => {
-  it('renders the control surface and search shell', () => {
+  it('renders the canvas surface with controls and interaction hints', () => {
     const html = renderToStaticMarkup(
       <ForceGraph2D
         graph={mockCases[0].graph}
@@ -13,19 +13,14 @@ describe('ForceGraph2D', () => {
         committedSearchNodeId={null}
         nodePositions={{}}
         isActive
-        onSearchQueryChange={() => {}}
-        onCommitSearchSelection={() => {}}
         onUpdateNodePosition={() => {}}
         onSelectNode={() => {}}
       />,
     );
 
-    expect(html).toContain('ForceGraph2D');
-    expect(html).toContain('Search nodes');
+    expect(html).toContain('graph-renderer-2d');
     expect(html).toContain('Zoom to Fit');
     expect(html).toContain('Drag nodes to reposition');
-    expect(html).toContain('1 suggestion');
-    expect(html).toContain('Choose a result to focus the graph');
-    expect(html).toContain('Marco Delgado');
+    expect(html).toContain('Active node');
   });
 });

@@ -96,15 +96,16 @@ describe('app shell smoke', () => {
         viewMode="2d"
         selectedNodeId="node-002"
         highlightedNodeIds={['node-002', 'node-007']}
+        searchQuery="Marco"
+        committedSearchNodeId="node-002"
         onSetViewMode={() => {}}
         onSelectNode={() => {}}
       />,
     );
 
-    expect(html).toContain('ForceGraph2D');
-    expect(html).toContain('MindMap3D');
+    expect(html).toContain('graph-renderer-2d');
+    expect(html).toContain('graph-renderer-3d');
     expect(html).toContain('Minimap');
-    expect(html).toContain('Marco Delgado');
     expect(html).toContain('display:block');
     expect(html).toContain('display:none');
   });
@@ -145,9 +146,10 @@ describe('app shell smoke', () => {
       />,
     );
 
-    expect(html).toContain('Investigation inputs');
+    expect(html).toContain('Operation Nightfall');
     expect(html).toContain('Raw Evidence');
     expect(html).toContain('Filters &amp; Layers');
+    expect(html).toContain('Search nodes');
     expect(html).toContain('Export');
     expect(html).toContain('Marco Delgado');
     expect(html).toContain('Investigation command center');
