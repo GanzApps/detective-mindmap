@@ -1,313 +1,207 @@
-# Implementation Plan: Tabbed Full-Viewport Case Workspace
+# Implementation Plan: Sidebar Evidence Tab — Entities with Children Count
 
 ## Overview
 
-Replace the current page-navigation model (`/cases` → `/cases/[caseId]`) with a persistent tabbed shell where each case opens as a tab. The entire workspace fits within `100vh × 100vw` with zero page-level scrolling — only internal panels scroll.
-
-The 6 layout slices from the reference (tab bar, toolbar, sidebar, graph container, timeline, AI command bar) are already built as components. We're reorganizing them into a fixed-viewport tab container.
+Transform the existing `EvidenceSidebar` + `EntitiesPanel` into a 2-tab sidebar (Evidence = Entities · Filters) with SVG entity type icons and a clickable children count badge on each entity row. The EntitiesPanel already has By Type / Hierarchy views — this plan adds the badge, generates the SVG assets, and simplifies the sidebar tab structure.
 
 ## Architecture Decisions
 
-- **Tab state lives in `caseStore`** — open tabs list, active tab ID. Each tab's workspace state (selected node, filters, view mode, AI result) is keyed by `caseId` so switching tabs preserves context.
-- **`CasesPage` becomes `CaseShellLayout`** — the persistent container that never unmounts. It renders the tab bar + the active tab's workspace.
-- **`CaseWorkspacePage` becomes `CaseTabPanel`** — a single case's workspace inside a tab. Receives `caseId` as prop, not from URL params.
-- **Root layout changes to `h-screen w-screen overflow-hidden`** — no more `min-h-screen`/padding wrappers. Each slice gets explicit sizing.
-- **URL still reflects active tab** for shareability (`/cases?tab=case-xxx`), but navigation is client-side only (no full page transitions).
-
-## Dependency Graph
-
-```
-caseStore (extend with tab state + per-tab workspace state)
-    │
-    ├── CaseTabBar (new — reads tab list, active tab, add/remove)
-    │       │
-    │       └── CaseShellLayout (replaces CasesPage — root container)
-    │               │
-    │               └── CaseTabPanel (wraps CaseWorkspaceShell)
-    │                       │
-    │                       └── CaseWorkspaceShell (existing — 6 slices, refit to flex layout)
-    │                               │
-    │                               ├── CaseHeader (existing — toolbar)
-    │                               ├── EvidenceSidebar (existing)
-    │                               ├── GraphWorkspace (existing)
-    │                               ├── TimelineBar (existing)
-    │                               └── AICommandBar (existing)
-    │
-    └── RootLayout (change body to h-screen)
-```
-
-Implementation order: store first → tab bar → shell layout → viewport refit → wire up.
+- **SVG icons as static files in `public/`** — using `<img>` tags with `style={{ color }}` for `currentColor` theming, avoiding React component boilerplate per icon.
+- **EntityIcon wrapper component** — single component that maps `EntityType` to SVG path and handles sizing/color, keeping `EntitiesPanel` clean.
+- **Children count computed via Map** — O(n) pass over nodes, stored as `Map<string, number>` keyed by parent ID, passed to EntityRow.
+- **Evidence tab replaces old evidence files list** — the old evidence category/file rendering is removed from the sidebar. If needed later, it can be relocated to the analysis panel (out of scope).
 
 ## Task List
 
-### Phase 1: Store Foundation
+### Phase 1: SVG Icon Assets
 
-#### Task 1: Extend caseStore with tab and per-tab workspace state
+#### Task 1: Generate 7 SVG icon files for entity types
 
-**Description:** Add tab management (open tabs, active tab) and per-tab workspace isolation. Currently `selectedNodeId`, `activeFilters`, `viewMode`, `aiResult`, etc. are global — they need to be keyed by `caseId` so each tab remembers its own state.
+**Description:** Create `public/icons/entity-types/` directory with 7 SVG files — one per `EntityType`. Each file uses the existing `ENTITY_TYPE_ICON` path data wrapped in a proper `<svg>` element with `currentColor` stroke so color can be controlled via CSS.
 
 **Acceptance criteria:**
-- [ ] `openTabs: { caseId: string; title: string }[]` in store — list of open case tabs
-- [ ] `activeTabCaseId: string | null` — which tab is currently visible
-- [ ] `perTabState: Record<string, TabWorkspaceState>` — workspace state keyed by caseId (selectedNodeId, activeFilters, viewMode, highlightedEntityIds, highlightedEvidenceId, aiResult, commandHistory, commandStatus)
-- [ ] Actions: `openTab(caseId)`, `closeTab(caseId)`, `switchTab(caseId)`, `createTab(caseData)`
-- [ ] Helper selectors: `activeTab()`, `activeTabWorkspaceState()`, `setActiveTabState(key, value)`
-- [ ] Existing CRUD actions (`setSelectedNode`, `setActiveFilters`, etc.) become wrappers that delegate to `setActiveTabState` when a tab is active
+- [ ] 7 SVG files exist in `public/icons/entity-types/` (person, organization, location, event, evidence, vehicle, digital)
+- [ ] Each file is valid SVG with `viewBox="0 0 24 24"`, `fill="none"`, `stroke="currentColor"`, `stroke-width="1.5"`
+- [ ] Path data matches the existing `ENTITY_TYPE_ICON` constants in `graphTypes.ts`
 
 **Verification:**
-- [ ] `pnpm exec jest --runInBand` — store unit tests pass
-- [ ] `pnpm exec tsc --noEmit` — no type errors
+- [ ] Open each SVG in browser — renders correctly at 24×24
+- [ ] Check SVG source — uses `currentColor`, not hardcoded hex colors
 
 **Dependencies:** None
 
 **Files likely touched:**
-- `src/store/caseStore.ts`
-- `src/store/__tests__/caseStore.test.ts` (new or extend existing)
+- `public/icons/entity-types/person.svg` (new)
+- `public/icons/entity-types/organization.svg` (new)
+- `public/icons/entity-types/location.svg` (new)
+- `public/icons/entity-types/event.svg` (new)
+- `public/icons/entity-types/evidence.svg` (new)
+- `public/icons/entity-types/vehicle.svg` (new)
+- `public/icons/entity-types/digital.svg` (new)
 
-**Estimated scope:** Medium (1 file, ~150 lines of new state + selectors)
+**Estimated scope:** Small — 7 files, straightforward generation
 
 ---
 
-#### Task 2: Root layout — full-viewport fixed container
+### Phase 2: EntityIcon Wrapper Component
 
-**Description:** Change the root `body` wrapper from `min-h-screen` with padding to `h-screen w-screen overflow-hidden`. Remove page-level scrolling entirely.
+#### Task 2: Create EntityIcon component that loads SVG files
+
+**Description:** Create a small `EntityIcon` component in `EntitiesPanel.tsx` (or as a separate file) that maps `EntityType` to the correct SVG file path, renders it at the requested size, and applies `ENTITY_TYPE_COLOR[type]` via inline `style.color`.
 
 **Acceptance criteria:**
-- [ ] `body` uses `h-screen w-screen overflow-hidden flex flex-col`
-- [ ] No page-level scroll on any route
-- [ ] Content still renders (will be clipped until subsequent tasks, but no crash)
+- [ ] `EntityIcon` accepts `type: EntityType` and `size?: number` (default 14)
+- [ ] Renders `<img>` or inline `<svg>` with correct file path
+- [ ] Color is set via `style={{ color: ENTITY_TYPE_COLOR[type] }}`
+- [ ] Component has `shrink-0` class to prevent flex squishing
 
 **Verification:**
-- [ ] `pnpm build` — no hydration errors
-- [ ] Manual: open any page, confirm no body scrollbar appears
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `src/app/layout.tsx`
-- `src/app/globals.css` (may need `html, body { overflow: hidden }` guard)
-
-**Estimated scope:** XS (1-2 files, ~5 lines change)
-
----
-
-### Checkpoint: Phase 1
-
-- [ ] All tests pass
-- [ ] Build succeeds
-- [ ] Store has tab state + per-tab workspace state
-- [ ] Root layout is full-viewport fixed
-
-> **Review with human before proceeding.**
-
----
-
-### Phase 2: Tab System
-
-#### Task 3: CaseTabBar component
-
-**Description:** Horizontal tab strip matching the reference: Home icon tab + case tabs with close button + "+ New" button to create and open a new case. Active tab has underline/highlight.
-
-**Acceptance criteria:**
-- [ ] Renders Home tab (links to `/cases` — closes all tabs)
-- [ ] Renders one tab per open case with case name as label
-- [ ] Each tab has a close button (×) that removes the tab
-- [ ] "+ New" button opens the Create Case modal, then opens the new case as a tab
-- [ ] Active tab visually distinguished (purple underline or background)
-- [ ] Tabs scroll horizontally if more than fit the viewport
-- [ ] Clicking a tab calls `switchTab(caseId)` in store
-
-**Verification:**
-- [ ] Component renders in Storybook or test mount
-- [ ] Click tab → store updates activeTabCaseId
-- [ ] Close tab → tab removed from openTabs list
-- [ ] "+ New" → creates case, adds tab, switches to it
+- [ ] `EntitiesPanel` renders without errors with new icon component
+- [ ] Icons appear in By Type section headers (16px) and entity rows (14px)
+- [ ] Each icon has the correct type color
 
 **Dependencies:** Task 1
 
 **Files likely touched:**
-- `src/components/layout/CaseTabBar.tsx` (new)
-- `src/components/layout/CaseTab.tsx` (new)
+- `src/components/layout/EntitiesPanel.tsx`
 
-**Estimated scope:** Medium (2 files, ~150 lines)
+**Estimated scope:** XS — 1 file, ~20 lines
 
 ---
 
-#### Task 4: CaseShellLayout — persistent tab container
+### Phase 3: Children Count Badge
 
-**Description:** New page component for `/cases` that replaces the current `CaseListPage`. It renders the `CaseTabBar` at top, then the active tab's `CaseTabPanel` below. When no tabs are open, shows the case list grid as an empty-state view.
+#### Task 3: Add children count computation and badge to EntitiesPanel
+
+**Description:** Add `computeChildrenCountMap()` function to build a `Map<parentId, childCount>` from the nodes array. Add a children count badge to `EntityRow` that shows `{count}` + chevron-down SVG, visible only when count > 0, clickable to call `onSelectNode`.
 
 **Acceptance criteria:**
-- [ ] `/cases` route renders `CaseShellLayout` (no full page reload on tab switch)
-- [ ] Tab bar is fixed at top of viewport
-- [ ] When tabs exist: active tab's workspace renders below tab bar
-- [ ] When no tabs open: case list grid renders (existing `CaseListPage` layout)
-- [ ] Opening a case from the list opens it as a tab (not a page navigation)
-- [ ] Switching tabs preserves each tab's workspace state
+- [ ] `computeChildrenCountMap` correctly counts direct children per node
+- [ ] EntityRow receives `childCount` prop or reads from map
+- [ ] Badge renders only when `childCount > 0`
+- [ ] Badge shows `{count}` followed by 12×12 chevron-down SVG
+- [ ] Badge click calls `onSelectNode(node.id)` with `e.stopPropagation()`
+- [ ] Badge has correct hover styles: `hover:text-shell-text-primary hover:border-shell-accent/30`
 
 **Verification:**
-- [ ] Open 2 cases as tabs, switch between them — both preserve their selected node/filters
-- [ ] Close a tab — workspace unmounts cleanly
-- [ ] No full page navigation when clicking cases
+- [ ] Nodes with children show correct count in badge
+- [ ] Nodes without children show no badge
+- [ ] Clicking badge selects node (same as row click)
+- [ ] Unit test: badge count matches expected children
 
-**Dependencies:** Task 3
+**Dependencies:** None (can be done in parallel with Tasks 1-2)
 
 **Files likely touched:**
-- `src/components/layout/CaseShellLayout.tsx` (new)
-- `src/app/cases/page.tsx` (modify to use CaseShellLayout)
-- `src/components/pages/CaseListPage.tsx` (extract empty-state view)
+- `src/components/layout/EntitiesPanel.tsx`
 
-**Estimated scope:** Medium (3 files, ~100 lines new)
+**Estimated scope:** Small — 1 file, ~40 lines
 
 ---
 
-### Checkpoint: Phase 2
+### Checkpoint: Core EntitiesPanel Complete
 
-- [ ] All tests pass
-- [ ] Tab system functional: open, close, switch
-- [ ] No page navigation on tab switch
-- [ ] Tab state persists across switches
-
-> **Review with human before proceeding.**
+- [ ] `EntitiesPanel` renders By Type view with SVG icons and children badges
+- [ ] `EntitiesPanel` renders Hierarchy view with SVG icons and children badges
+- [ ] `npm run build` succeeds
+- [ ] All existing tests pass
 
 ---
 
-### Phase 3: Workspace Refit to Full Viewport
+### Phase 4: Simplify EvidenceSidebar to 2 Tabs
 
-#### Task 5: CaseWorkspaceShell — flex-based fixed layout
+#### Task 4: Reduce EvidenceSidebar from 3 tabs to 2
 
-**Description:** Replace the current `max-w-7xl space-y-shell-lg` grid layout with a flex-based layout that fills the remaining viewport height. The 6 slices stack vertically with explicit sizing.
+**Description:** Change `RailTab` type from `'evidence' | 'filters' | 'entities'` to `'evidence' | 'filters'`. Rename the tab button labels: first tab → "Evidence" (renders `entitiesPanel`), second tab → "Filters". Remove the old evidence files list rendering (the `evidence.map(...)` block). Remove unused `evidence`, `selectedEvidenceId`, `onEvidenceSelect` props if no longer needed.
 
 **Acceptance criteria:**
-- [ ] Outer container: `flex flex-col h-full overflow-hidden` (fills parent)
-- [ ] CaseHeader: fixed height (~48px), no shrink
-- [ ] Middle row (Sidebar + Graph + Analysis): `flex-1 flex-row overflow-hidden`
-  - Sidebar: fixed width (320px), `overflow-y-auto` for internal scroll
-  - Graph: `flex-1 overflow-hidden` (fills remaining space)
-  - Analysis panel: fixed width (320px), `overflow-y-auto`
-- [ ] Timeline: fixed height (~120px), `overflow-x-auto` horizontally
-- [ ] AICommandBar: fixed height (~48px), no shrink
-- [ ] No content overflow causes page scroll — only internal panels scroll
+- [ ] `RailTab` type is `'evidence' | 'filters'`
+- [ ] Tab buttons render: "Evidence" and "Filters"
+- [ ] "Evidence" tab renders `entitiesPanel` content
+- [ ] "Filters" tab renders `filtersPanel` content
+- [ ] Old evidence files list (`evidence.map(...)`) is removed
+- [ ] Unused props (`evidence`, `selectedEvidenceId`, `onEvidenceSelect`) are removed
+- [ ] TypeScript compiles without errors
 
 **Verification:**
-- [ ] Open a case tab, expand browser to full screen — graph fills all remaining space
-- [ ] Add 20 evidence files — sidebar scrolls internally, page does not
-- [ ] Add 30 timeline events — timeline scrolls horizontally, page does not
-- [ ] Resize window — layout adapts, no horizontal page scroll
+- [ ] Sidebar shows 2 tabs
+- [ ] "Evidence" tab displays EntitiesPanel (By Type / Hierarchy)
+- [ ] "Filters" tab displays WorkspaceFiltersPanel
+- [ ] No TypeScript errors in `EvidenceSidebar` or callers
 
-**Dependencies:** Task 4
+**Dependencies:** None (can be done in parallel with Tasks 1-3)
 
 **Files likely touched:**
-- `src/components/layout/CaseWorkspaceShell.tsx` (refactor layout structure)
+- `src/components/layout/EvidenceSidebar.tsx`
+- `src/components/layout/CaseWorkspaceShell.tsx` (update props passed to EvidenceSidebar)
 
-**Estimated scope:** Medium (1 file, ~50 lines change)
+**Estimated scope:** Small — 2 files
 
 ---
 
-#### Task 6: CaseShellLayout — flex wrapper for tab content area
+### Phase 5: Cleanup & Tests
 
-**Description:** The area below the tab bar in `CaseShellLayout` needs to be `flex-1 overflow-hidden` so the active tab's workspace fills the remaining height.
+#### Task 5: Add EntitiesPanel unit tests
+
+**Description:** Create `src/components/layout/__tests__/EntitiesPanel.test.tsx` covering: By Type grouping, empty-type hiding, Hierarchy tree building, orphan handling, children count badge behavior, select/delete interactions, selected/highlighted styling.
 
 **Acceptance criteria:**
-- [ ] Tab bar: fixed height, no shrink
-- [ ] Content area: `flex-1 overflow-hidden` — workspace fills remaining viewport
-- [ ] Case list empty-state: scrolls internally if list is long
+- [ ] Test: By Type sections grouped by `EntityType`
+- [ ] Test: Empty type sections are hidden
+- [ ] Test: Hierarchy builds tree with correct nesting
+- [ ] Test: Orphaned nodes (parent not found) render as roots
+- [ ] Test: Children count badge shows correct count
+- [ ] Test: Children badge hidden for nodes with 0 children
+- [ ] Test: Clicking badge calls `onSelectNode`
+- [ ] Test: Clicking row calls `onSelectNode`
+- [ ] Test: Delete button calls `onDeleteEntity`
+- [ ] Test: Selected node has accent highlight class
+- [ ] Test: Highlighted nodes have amber tint class
+- [ ] Test: Tab switch between By Type / Hierarchy
 
 **Verification:**
-- [ ] With no tabs open, case list fills remaining height below tab bar
-- [ ] With tabs open, active tab's workspace fills remaining height
-- [ ] No page-level scroll in any configuration
+- [ ] `npm test` — all new tests pass
+- [ ] `npm test -- --coverage` — EntitiesPanel covered
 
-**Dependencies:** Task 4, Task 5
-
-**Files likely touched:**
-- `src/components/layout/CaseShellLayout.tsx`
-
-**Estimated scope:** XS (1 file, ~10 lines change)
-
----
-
-### Checkpoint: Phase 3
-
-- [ ] Full-viewport layout: no page scroll at any screen size
-- [ ] Graph fills all available space
-- [ ] Sidebar and timeline scroll internally
-- [ ] All 6 slices visible simultaneously
-
-> **Review with human before proceeding.**
-
----
-
-### Phase 4: Polish & Routing
-
-#### Task 7: URL sync — active tab reflected in URL
-
-**Description:** Keep the URL in sync with the active tab for shareability. Use query param `?tab=case-xxx` so the URL updates without full page navigation.
-
-**Acceptance criteria:**
-- [ ] Switching a tab updates URL to `/cases?tab=case-xxx`
-- [ ] Loading `/cases?tab=case-xxx` directly opens that tab
-- [ ] Closing the active tab updates URL to `/cases` or switches to another tab
-- [ ] Home tab clears the query param
-
-**Verification:**
-- [ ] Copy URL with `?tab=xxx`, paste in new window — correct tab opens
-- [ ] Browser back/forward navigates tab history
-
-**Dependencies:** Task 4
+**Dependencies:** Tasks 1-4
 
 **Files likely touched:**
-- `src/components/layout/CaseShellLayout.tsx`
-- `src/components/layout/CaseTabBar.tsx`
+- `src/components/layout/__tests__/EntitiesPanel.test.tsx` (new)
 
-**Estimated scope:** Small (2 files, ~30 lines)
-
----
-
-#### Task 8: Keyboard shortcuts — tab navigation
-
-**Description:** Add keyboard shortcuts for tab management matching the reference pattern.
-
-**Acceptance criteria:**
-- [ ] `Ctrl+T` / `Cmd+T` — create new case (opens modal)
-- [ ] `Ctrl+W` / `Cmd+W` — close current tab
-- [ ] `Ctrl+1..9` / `Cmd+1..9` — switch to tab N
-- [ ] Shortcuts only active when focus is not in a text input
-
-**Verification:**
-- [ ] Press `Ctrl+W` — active tab closes
-- [ ] Press `Ctrl+2` — switches to second tab
-- [ ] Typing in AI command bar does not trigger shortcuts
-
-**Dependencies:** Task 3
-
-**Files likely touched:**
-- `src/components/layout/CaseTabBar.tsx` (add keyboard handler)
-
-**Estimated scope:** Small (1 file, ~40 lines)
+**Estimated scope:** Medium — 1 file, ~12 test cases
 
 ---
 
 ### Checkpoint: Complete
 
-- [ ] All tests pass
-- [ ] `pnpm exec tsc --noEmit` — no errors
-- [ ] `pnpm build` — clean production build
-- [ ] Full E2E flow: create case → opens as tab → workspace fills viewport → switch tabs → close tab → URL in sync
+- [ ] All tests pass: `npm test`
+- [ ] Build succeeds: `npm run build`
+- [ ] Manual check: sidebar shows 2 tabs, Evidence tab has By Type/Hierarchy with icons and children badges, Filters tab works
+- [ ] Ready for review
 
 ---
+
+## Dependency Graph
+
+```
+Task 1: SVG icons ──→ Task 2: EntityIcon wrapper ──→ Task 3: Children badge
+                                                                        │
+Task 4: Sidebar 2 tabs ─────────────────────────────────────────────────┤
+                                                                        ├──→ Task 5: Tests
+                                                                        │
+Checkpoint: Core (after 1-4) ───────────────────────────────────────────┘
+```
+
+Tasks 1, 3, and 4 can be done in parallel. Task 2 depends on Task 1. Task 5 depends on all others.
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Per-tab state in zustand store grows large | Medium — memory if many tabs open | Limit open tabs to 10; tabs are lightweight (just IDs + pointers to shared case data) |
-| Graph canvas doesn't fill space due to flex quirks | Low — visual issue | Test with `ResizeObserver`; graph already uses `flex-1` internally |
-| Next.js client-side routing conflicts with tab state | Medium — stale data on refresh | URL sync (Task 7) restores active tab on reload; store persists to localStorage |
-| Existing `CaseWorkspacePage` page routes still work via direct URL | Low — edge case | Keep `/cases/[caseId]` route but redirect to `/?tab=caseId` for compatibility |
+| Old evidence files list removal breaks `CaseWorkspaceShell` prop passing | Medium | Check all consumers of `EvidenceSidebar` props before removal; keep props if still used elsewhere |
+| SVG icons not rendering due to Next.js static file handling | Low | Use `public/` directory (Next.js serves automatically); fallback to inline SVG if needed |
+| `EntitiesPanel` already works — risk of regressions | Medium | Run existing tests before and after changes; test manually in dev server |
+| Badge `stopPropagation` conflicts with row click | Low | Test both badge click and row click independently |
 
 ## Open Questions
 
-- Should the case list grid be replaced entirely by the tab view, or kept as the empty-state when no tabs are open? (Planned: kept as empty-state)
-- Should closing the last tab return to the case list, or open a new empty tab? (Planned: return to case list)
-- Do we need tab drag-to-reorder, or is click-to-switch sufficient for v3.0? (Planned: click-to-switch first, reorder later)
+None — all resolved in spec refinement.

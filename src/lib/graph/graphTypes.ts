@@ -69,6 +69,16 @@ export const ENTITY_TYPE_SHAPE: Record<EntityType, 'avatar' | 'marker' | 'block'
   digital: 'hex',
 };
 
+export const ENTITY_TYPE_ICON: Record<EntityType, string> = {
+  person: 'M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z',
+  organization: 'M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21v-4h6v4',
+  location: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z',
+  event: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
+  evidence: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1v5h5M9 13h6M9 17h4',
+  vehicle: 'M5 17H3v-5l2-5h14l2 5v5h-2m-12 0a2 2 0 104 0 2 2 0 00-4 0zm10 0a2 2 0 104 0 2 2 0 00-4 0z',
+  digital: 'M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18',
+};
+
 export function getConnectedIds(edges: GraphEdge[], nodeId: string): Set<string> {
   const result = new Set<string>();
 

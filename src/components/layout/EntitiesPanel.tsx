@@ -1,6 +1,6 @@
 'use client';
 
-import { ENTITY_TYPE_COLOR, type EntityType, type GraphNode } from '@/lib/graph/graphTypes';
+import { ENTITY_TYPE_COLOR, ENTITY_TYPE_ICON, type EntityType, type GraphNode } from '@/lib/graph/graphTypes';
 import { useState } from 'react';
 
 const ENTITY_LABELS: Record<EntityType, string> = {
@@ -29,15 +29,6 @@ const STATUS_BADGE: Record<GraphNode['status'], string> = {
   unknown: 'border-shell-border bg-shell-surface text-shell-text-muted',
 };
 
-const ICON_PATH: Record<EntityType, string> = {
-  person: '/icons/entity-types/person.svg',
-  organization: '/icons/entity-types/organization.svg',
-  location: '/icons/entity-types/location.svg',
-  event: '/icons/entity-types/event.svg',
-  evidence: '/icons/entity-types/evidence.svg',
-  vehicle: '/icons/entity-types/vehicle.svg',
-  digital: '/icons/entity-types/digital.svg',
-};
 
 type TreeNode = GraphNode & { children: TreeNode[] };
 
@@ -70,14 +61,19 @@ function computeChildrenCountMap(nodes: GraphNode[]): Map<string, number> {
 
 function EntityIcon({ type, size = 14 }: { type: EntityType; size?: number }) {
   return (
-    <img
-      src={ICON_PATH[type]}
-      alt=""
+    <svg
       width={size}
       height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={ENTITY_TYPE_COLOR[type]}
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className="shrink-0"
-      style={{ color: ENTITY_TYPE_COLOR[type] }}
-    />
+    >
+      <path d={ENTITY_TYPE_ICON[type]} />
+    </svg>
   );
 }
 
@@ -149,32 +145,59 @@ function TreeNodeRow({
   selectedNodeId,
   highlightedEntityIds,
   childrenCountMap,
+  expandedHierarchyNodes,
   onSelectNode,
   onDeleteEntity,
+  onToggleHierarchyNode,
 }: {
   node: TreeNode;
   depth: number;
   selectedNodeId: string | null;
   highlightedEntityIds: string[];
   childrenCountMap: Map<string, number>;
+  expandedHierarchyNodes: Set<string>;
   onSelectNode: (id: string | null) => void;
   onDeleteEntity: (id: string) => void;
+  onToggleHierarchyNode: (id: string) => void;
 }) {
   const childCount = childrenCountMap.get(node.id) ?? 0;
+  const isExpanded = expandedHierarchyNodes.has(node.id);
 
   return (
     <>
-      <div style={{ paddingLeft: depth * 12 }}>
-        <EntityRow
-          node={node}
-          isSelected={selectedNodeId === node.id}
-          isHighlighted={highlightedEntityIds.includes(node.id)}
-          childCount={childCount}
-          onSelect={() => onSelectNode(selectedNodeId === node.id ? null : node.id)}
-          onDelete={() => onDeleteEntity(node.id)}
-        />
+      <div style={{ paddingLeft: depth * 12 }} className="flex items-center gap-1">
+        {childCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => onToggleHierarchyNode(node.id)}
+            className="shrink-0 text-shell-text-muted hover:text-shell-text-primary"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <svg
+              className={`h-3 w-3 transition ${isExpanded ? 'rotate-90' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        ) : (
+          <span className="w-3 shrink-0" />
+        )}
+        <div className="min-w-0 flex-1">
+          <EntityRow
+            node={node}
+            isSelected={selectedNodeId === node.id}
+            isHighlighted={highlightedEntityIds.includes(node.id)}
+            childCount={childCount}
+            onSelect={() => onSelectNode(selectedNodeId === node.id ? null : node.id)}
+            onDelete={() => onDeleteEntity(node.id)}
+          />
+        </div>
       </div>
-      {node.children.map((child) => (
+      {isExpanded && node.children.map((child) => (
         <TreeNodeRow
           key={child.id}
           node={child}
@@ -182,8 +205,10 @@ function TreeNodeRow({
           selectedNodeId={selectedNodeId}
           highlightedEntityIds={highlightedEntityIds}
           childrenCountMap={childrenCountMap}
+          expandedHierarchyNodes={expandedHierarchyNodes}
           onSelectNode={onSelectNode}
           onDeleteEntity={onDeleteEntity}
+          onToggleHierarchyNode={onToggleHierarchyNode}
         />
       ))}
     </>
@@ -205,12 +230,22 @@ export default function EntitiesPanel({
 }) {
   const [viewMode, setViewMode] = useState<'type' | 'hierarchy'>('type');
   const [expandedTypes, setExpandedTypes] = useState<Set<EntityType>>(new Set());
+  const [expandedHierarchyNodes, setExpandedHierarchyNodes] = useState<Set<string>>(new Set());
 
   function toggleType(type: EntityType) {
     setExpandedTypes((prev) => {
       const next = new Set(prev);
       if (next.has(type)) next.delete(type);
       else next.add(type);
+      return next;
+    });
+  }
+
+  function toggleHierarchyNode(id: string) {
+    setExpandedHierarchyNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }
@@ -309,8 +344,10 @@ export default function EntitiesPanel({
               selectedNodeId={selectedNodeId}
               highlightedEntityIds={highlightedEntityIds}
               childrenCountMap={childrenCountMap}
+              expandedHierarchyNodes={expandedHierarchyNodes}
               onSelectNode={onSelectNode}
               onDeleteEntity={onDeleteEntity}
+              onToggleHierarchyNode={toggleHierarchyNode}
             />
           ))}
           {nodes.length === 0 && (

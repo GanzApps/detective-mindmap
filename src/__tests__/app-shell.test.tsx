@@ -147,12 +147,12 @@ describe('app shell smoke', () => {
     );
 
     expect(html).toContain('Operation Nightfall');
-    expect(html).toContain('Raw Evidence');
-    expect(html).toContain('Filters &amp; Layers');
+    expect(html).toContain('Evidence');
+    expect(html).toContain('Filters');
     expect(html).toContain('Search nodes');
     expect(html).toContain('Export');
     expect(html).toContain('Marco Delgado');
-    expect(html).toContain('Investigation command center');
+    expect(html).toContain('Command Center');
     expect(html).toContain('Timeline');
     expect(html).toContain('iPhone_14_extraction.zip');
   });

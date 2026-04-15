@@ -1,22 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { type CommandHistoryEntry, type QuickCommandSuggestion } from '@/lib/ai/knownIntents';
+import { useEffect, useRef, useState } from 'react';
+import { type QuickCommandSuggestion } from '@/lib/ai/knownIntents';
 
 export default function AICommandBar({
   quickCommands,
-  recentCommands,
   status,
   statusMessage,
   onExecute,
 }: {
   quickCommands: QuickCommandSuggestion[];
-  recentCommands: CommandHistoryEntry[];
+  /** @deprecated — no longer rendered */
+  recentCommands?: unknown[];
   status: 'idle' | 'running' | 'complete' | 'failed';
   statusMessage: string;
   onExecute: (command: string) => void;
 }) {
   const [inputValue, setInputValue] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (status === 'complete') {
@@ -25,11 +28,18 @@ export default function AICommandBar({
   }, [status]);
 
   function handleSubmit() {
-    if (!inputValue.trim()) {
-      return;
-    }
-
+    if (!inputValue.trim()) return;
     onExecute(inputValue);
+  }
+
+  function handleInputFocus() {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    setInputFocused(true);
+  }
+
+  function handleInputBlur() {
+    // Short delay so quick-command button clicks register before hiding
+    blurTimerRef.current = setTimeout(() => setInputFocused(false), 150);
   }
 
   const statusTone = status === 'failed'
@@ -41,32 +51,59 @@ export default function AICommandBar({
         : 'border-shell-border bg-shell-surface-raised text-shell-text-secondary';
 
   return (
-    <section className="rounded-shell-xl border border-shell-border bg-shell-surface shadow-shell-sm">
-      <div className="border-b border-shell-border px-shell-md py-shell-md">
-        <div className="flex flex-wrap items-center justify-between gap-shell-sm">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-shell-text-muted">
-              Quick Commands
-            </p>
-            <h2 className="mt-2 text-lg font-semibold text-shell-text-primary">
-              Investigation command center
-            </h2>
-          </div>
-          <span className="rounded-shell-pill border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
-            Known intents
-          </span>
+    <section className="border-t border-shell-border bg-shell-surface">
+
+      {/* ── Header ── */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        <span className="text-xs font-medium uppercase tracking-[0.22em] text-shell-text-muted">
+          Command Center
+        </span>
+
+        {/* (?) help */}
+        <div className="relative">
+          <button
+            type="button"
+            aria-label="Command center help"
+            onMouseEnter={() => setTooltipVisible(true)}
+            onMouseLeave={() => setTooltipVisible(false)}
+            onFocus={() => setTooltipVisible(true)}
+            onBlur={() => setTooltipVisible(false)}
+            className="flex h-4 w-4 items-center justify-center rounded-full border border-shell-border bg-shell-surface-raised text-[9px] font-bold text-shell-text-muted transition hover:border-shell-accent/40 hover:text-shell-accent"
+          >
+            ?
+          </button>
+          {tooltipVisible && (
+            <div
+              role="tooltip"
+              className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-lg border border-shell-border bg-shell-surface px-3 py-2 text-xs text-shell-text-secondary shadow-shell-lg"
+            >
+              Natural language and slash commands to investigate the graph. Focus the input to see available quick commands.
+            </div>
+          )}
         </div>
 
-        <div className="mt-shell-md flex flex-wrap gap-shell-sm">
+        <div className="flex-1" />
+
+        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+          Known intents
+        </span>
+      </div>
+
+      {/* ── Quick commands — visible only when input is focused ── */}
+      {inputFocused && quickCommands.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 border-t border-shell-border px-3 py-2">
           {quickCommands.map((command) => (
             <button
               key={command.id}
               type="button"
-              onClick={() => {
+              onMouseDown={(e) => {
+                // Prevent blur before click fires
+                e.preventDefault();
                 setInputValue(command.prompt);
                 onExecute(command.prompt);
+                setInputFocused(false);
               }}
-              className={`rounded-shell-pill border px-4 py-2 text-sm transition ${
+              className={`rounded-full border px-3 py-1 text-xs transition ${
                 command.kind === 'context'
                   ? 'border-shell-accent/30 bg-shell-accent-muted text-shell-text-primary hover:border-shell-accent'
                   : 'border-shell-border bg-shell-surface-raised text-shell-text-secondary hover:border-shell-border-strong hover:text-shell-text-primary'
@@ -76,62 +113,37 @@ export default function AICommandBar({
             </button>
           ))}
         </div>
+      )}
+
+      {/* ── Input row ── */}
+      <div className="flex items-center gap-2 border-t border-shell-border px-3 py-2">
+        <label className="flex flex-1 items-center rounded-lg border border-shell-accent/35 bg-shell-accent-muted px-3 py-1.5">
+          <span className="sr-only">Investigation command input</span>
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+            }}
+            placeholder="Type a command or /action…"
+            className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={status === 'running' || !inputValue.trim()}
+          className="rounded-lg bg-shell-accent px-4 py-1.5 text-sm font-semibold text-shell-accent-fg transition disabled:opacity-50"
+        >
+          {status === 'running' ? 'Running…' : 'Execute'}
+        </button>
       </div>
 
-      <div className="px-shell-md py-shell-md">
-        <div className="flex flex-col gap-shell-sm lg:flex-row lg:items-center">
-          <label className="flex min-h-14 flex-1 items-center rounded-shell-lg border border-shell-accent/35 bg-shell-accent-muted px-shell-md">
-            <span className="sr-only">Investigation command input</span>
-            <input
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              placeholder="Enter a command or ask for an investigation action (e.g. /find suspicious patterns)"
-              className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={status === 'running' || !inputValue.trim()}
-            className="rounded-shell-lg bg-shell-accent px-shell-lg py-shell-sm text-sm font-semibold text-shell-accent-fg transition disabled:opacity-50"
-          >
-            {status === 'running' ? 'Running…' : 'Execute'}
-          </button>
-        </div>
-
-        <div className={`mt-shell-sm rounded-shell-lg border px-4 py-3 text-sm ${statusTone}`}>
-          {statusMessage}
-        </div>
-
-        {recentCommands.length > 0 ? (
-          <div className="mt-shell-md">
-            <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">Recent commands</p>
-            <div className="mt-3 flex flex-wrap gap-shell-sm">
-              {recentCommands.slice(0, 4).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-shell-pill border border-shell-border bg-shell-surface-raised px-3 py-2 text-xs text-shell-text-secondary"
-                >
-                  <span className="font-medium text-shell-text-primary">{entry.label}</span>
-                  <span className="mx-2 text-shell-text-muted">•</span>
-                  <span>{entry.timestampLabel}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex flex-wrap gap-shell-md px-shell-md pb-shell-md text-xs text-shell-text-muted">
-        <span>Command Center Active</span>
-        <span>Natural language and slash commands</span>
-        <span>Results route into the analysis panel</span>
+      {/* ── Status ── */}
+      <div className={`mx-3 mb-2 rounded-lg border px-3 py-1.5 text-xs ${statusTone}`}>
+        {statusMessage}
       </div>
     </section>
   );

@@ -115,25 +115,29 @@ test('row: highlighted node has amber class', () => {
 
 // --- Hierarchy view ---
 
-test('Hierarchy: switch to hierarchy mode', () => {
+test('Hierarchy: switch to hierarchy mode — root nodes visible, collapsed by default', () => {
   render(<EntitiesPanel {...defaultProps} />);
   fireEvent.click(screen.getByText('Hierarchy'));
-  // All nodes should be visible at top level (no parents in default set)
+  // All root nodes visible (no parents in default set)
   expect(screen.getByText('Alice')).toBeInTheDocument();
   expect(screen.getByText('Bob')).toBeInTheDocument();
   expect(screen.getByText('HQ')).toBeInTheDocument();
 });
 
-test('Hierarchy: root nodes render at top level', () => {
+test('Hierarchy: child hidden by default, shown after expand', () => {
   render(<EntitiesPanel {...defaultProps} nodes={[hq, child]} />);
   fireEvent.click(screen.getByText('Hierarchy'));
-  expect(screen.getByText('HQ')).toBeInTheDocument();
+  // Child hidden by default
+  expect(screen.queryByText('Child Org')).not.toBeInTheDocument();
+  // Expand HQ via chevron button
+  fireEvent.click(screen.getByLabelText('Expand'));
   expect(screen.getByText('Child Org')).toBeInTheDocument();
 });
 
 test('Hierarchy: child indented under parent (paddingLeft > 0)', () => {
   render(<EntitiesPanel {...defaultProps} nodes={[hq, child]} />);
   fireEvent.click(screen.getByText('Hierarchy'));
+  fireEvent.click(screen.getByLabelText('Expand'));
   const childWrapper = screen.getByText('Child Org').closest('[style]');
   expect(childWrapper?.getAttribute('style')).toMatch(/padding-left:\s*12px/);
 });
