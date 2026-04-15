@@ -74,7 +74,7 @@ export function makeDefaultTabWorkspaceState(): TabWorkspaceState {
     layerPreferences: DEFAULT_LAYER_PREFERENCES,
     highlightedEvidenceId: null,
     highlightedEntityIds: [],
-    viewMode: '2d',
+    viewMode: '3d',
     aiResult: null,
     commandHistory: [],
     commandStatus: 'idle',
@@ -183,7 +183,7 @@ export const useCaseStore = create<CaseStoreState>()(persist((set, get) => ({
   layerPreferences: DEFAULT_LAYER_PREFERENCES,
   highlightedEvidenceId: null,
   highlightedEntityIds: [],
-  viewMode: '2d',
+  viewMode: '3d',
   hydrateCases: (cases) => set((state) => ({
     cases: mergeCases(state.cases, cases),
   })),
