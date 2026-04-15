@@ -63,6 +63,10 @@ function getConnectedNodeIds(
 
   // Start with family-linked focus (selected + parent/child/sibling)
   const familyFocus = getBranchLinkedFocusIds(graph.nodes, graph.edges, selectedNodeId);
+  // If node not found in graph (e.g. stale localStorage id), disable focus-dimming entirely
+  if (familyFocus.size === 0) {
+    return null;
+  }
   // Also include all directly-connected nodes (edge neighbors)
   const directConnections = getConnectedIds(graph.edges, selectedNodeId);
   // Preserve highlighted nodes from AI results so they aren't dimmed by selection

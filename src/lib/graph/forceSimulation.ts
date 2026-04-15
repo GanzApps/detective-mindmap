@@ -376,7 +376,11 @@ export function drawGraph2D(
 ) {
   const transform = options.transform ?? DEFAULT_TRANSFORM;
   const focusSelectedNeighborhood = options.focusSelectedNeighborhood ?? true;
-  const selectedNeighborhood = focusSelectedNeighborhood && options.selectedId
+  // Only focus-dim when the selected node actually exists in the graph (guards stale localStorage ids)
+  const selectedNodeExists = options.selectedId
+    ? nodes.some((n) => n.id === options.selectedId)
+    : false;
+  const selectedNeighborhood = focusSelectedNeighborhood && selectedNodeExists && options.selectedId
     ? getBranchLinkedFocusNodeIds(nodes, edges, options.selectedId)
     : new Set<string>();
   const activeEntityTypes = options.activeEntityTypes
@@ -385,12 +389,12 @@ export function drawGraph2D(
   const emphasisIds = new Set<string>([
     ...(options.highlightedIds ?? []),
     ...(options.searchMatchIds ?? []),
-    ...(options.selectedId ? [options.selectedId, ...selectedNeighborhood] : []),
+    ...(selectedNodeExists && options.selectedId ? [options.selectedId, ...selectedNeighborhood] : []),
   ]);
   const visibleEdgeLabels = new Set(options.showEdgeLabels === false ? [] : getVisibleEdgeLabels(nodes, edges, options));
   const selectedEdgeIds = new Set<string>();
 
-  if (options.selectedId) {
+  if (selectedNodeExists && options.selectedId) {
     for (const edge of edges) {
       if (edge.source.id === options.selectedId || edge.target.id === options.selectedId) {
         selectedEdgeIds.add(edge.id);
@@ -440,8 +444,7 @@ export function drawGraph2D(
     const isSelectedEdge = selectedEdgeIds.has(edge.id);
     const isEmphasized = emphasisIds.has(source.id) || emphasisIds.has(target.id);
     const isFocusDimmed = focusSelectedNeighborhood
-      && options.selectedId !== undefined
-      && options.selectedId !== null
+      && selectedNodeExists
       && !(isSelectedEdge || isEmphasized);
     const isDimmed = isFilteredOut || isFocusDimmed;
 
@@ -487,8 +490,7 @@ export function drawGraph2D(
     const isEmphasized = emphasisIds.has(node.id);
     const isFilteredOut = activeEntityTypes !== null && !activeEntityTypes.has(node.type);
     const isFocusDimmed = focusSelectedNeighborhood
-      && options.selectedId !== undefined
-      && options.selectedId !== null
+      && selectedNodeExists
       && !(isSelected || isInNeighborhood || isEmphasized);
     const isDimmed = isFilteredOut || isFocusDimmed;
     const ringRadius = node.radius + (isSelected ? 7 : isEmphasized ? 4 : 0);
