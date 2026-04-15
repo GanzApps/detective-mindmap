@@ -1,5 +1,6 @@
 import {
   getBranchLinkedFocusIds,
+  getConnectedIds,
   ENTITY_TYPE_COLOR,
   type EntityType,
   type GraphData,
@@ -51,12 +52,22 @@ function rgbaFromHex(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function getConnectedNodeIds(graph: GraphData, selectedNodeId: string | null | undefined) {
+function getConnectedNodeIds(
+  graph: GraphData,
+  selectedNodeId: string | null | undefined,
+  highlightedNodeIds: Set<string>,
+): Set<string> | null {
   if (!selectedNodeId) {
     return null;
   }
 
-  return getBranchLinkedFocusIds(graph.nodes, graph.edges, selectedNodeId);
+  // Start with family-linked focus (selected + parent/child/sibling)
+  const familyFocus = getBranchLinkedFocusIds(graph.nodes, graph.edges, selectedNodeId);
+  // Also include all directly-connected nodes (edge neighbors)
+  const directConnections = getConnectedIds(graph.edges, selectedNodeId);
+  // Preserve highlighted nodes from AI results so they aren't dimmed by selection
+  const result = new Set<string>([...familyFocus, ...directConnections, ...highlightedNodeIds]);
+  return result;
 }
 
 export function prepareFrame3D(
@@ -72,6 +83,8 @@ export function prepareFrame3D(
   );
   const sortedNodes = [...projectedNodes].sort((left, right) => left.depth - right.depth);
 
+  const highlightedNodeIds = new Set(options.highlightedNodeIds ?? []);
+
   return {
     layoutNodes,
     projectedNodes,
@@ -79,8 +92,8 @@ export function prepareFrame3D(
     sortedNodes,
     connectedNodeIds: options.focusSelectedNeighborhood === false
       ? null
-      : getConnectedNodeIds(graph, options.selectedNodeId),
-    highlightedNodeIds: new Set(options.highlightedNodeIds ?? []),
+      : getConnectedNodeIds(graph, options.selectedNodeId, highlightedNodeIds),
+    highlightedNodeIds,
     activeEntityTypes: options.activeEntityTypes
       ? new Set(options.activeEntityTypes)
       : null,
@@ -213,9 +226,12 @@ export function drawFrame3D(
     ctx.save();
     drawProjectedShape(ctx, node);
     ctx.fillStyle = semanticColor;
-    ctx.globalAlpha = isSelected || isConnected || isHighlighted
-      ? 1
-      : Math.max(0.55, 0.62 + node.depth / 700);
+    // When selection is active, non-focus nodes are already dimmed via isDimmed above.
+    // In the no-selection state, use near-full opacity with only a subtle depth fade.
+    const baseAlpha = prepared.connectedNodeIds !== null
+      ? 1  // selection active: remaining nodes are focus nodes, full opacity
+      : Math.max(0.82, 0.90 + node.depth / 800);  // no selection: subtle depth fade
+    ctx.globalAlpha = isSelected || isConnected || isHighlighted ? 1 : baseAlpha;
     ctx.fill();
     ctx.strokeStyle = rgbaFromHex('#ffffff', isSelected ? 0.9 : 0.32);
     ctx.lineWidth = isSelected ? 1.8 : 0.8;
@@ -245,7 +261,9 @@ export function drawFrame3D(
       const fontSize = Math.max(9, Math.min(13, node.radius * 1.1));
       const alpha = isSelected || isConnected || isHighlighted
         ? 1
-        : Math.max(0.3, 0.35 + node.depth / 800);
+        : prepared.connectedNodeIds !== null
+          ? 0.82  // focus-mode: non-focus nodes already filtered by isDimmed, these are focus
+          : Math.max(0.55, 0.62 + node.depth / 800);  // no selection: subtle depth fade
       const lines = node.label.split('\n');
 
       ctx.save();
