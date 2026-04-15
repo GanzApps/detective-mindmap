@@ -5,18 +5,17 @@ import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
 import TimelineBar from '@/components/layout/TimelineBar';
 import { mockCases } from '@/lib/data/mockCases';
 
+
 describe('Workspace panels', () => {
-  it('opens the left rail on Raw Evidence by default', () => {
+  it('opens on Evidence tab by default showing entitiesPanel', () => {
     render(
       <EvidenceSidebar
-        evidence={mockCases[0].evidence}
-        selectedEvidenceId={mockCases[0].evidence[0].files[0].id}
-        onEvidenceSelect={() => {}}
+        entitiesPanel={<div>Entities content</div>}
         filtersPanel={<div>Filters content</div>}
       />,
     );
 
-    expect(screen.getByText('iPhone_14_extraction.zip')).toBeInTheDocument();
+    expect(screen.getByText('Entities content')).toBeInTheDocument();
     expect(screen.queryByText('Filters content')).not.toBeInTheDocument();
   });
 

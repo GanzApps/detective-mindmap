@@ -2,48 +2,68 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
-import { mockCases } from '@/lib/data/mockCases';
 
 describe('EvidenceSidebar', () => {
-  it('renders evidence categories and files', () => {
+  it('renders Evidence and Filters tabs only', () => {
     render(
       <EvidenceSidebar
-        evidence={mockCases[0].evidence}
-        selectedEvidenceId="file-001"
-        onEvidenceSelect={() => {}}
         filtersPanel={<div>Filters panel content</div>}
+        entitiesPanel={<div>Entities panel content</div>}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Raw Evidence' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Filters & Layers' })).toBeInTheDocument();
-    expect(screen.getByText('Device Data')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /iPhone_14_extraction\.zip/i })).toBeInTheDocument();
-    expect(screen.getByText('Surveillance')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Warehouse_cam_jan18\.mp4/i })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Filters & Layers' }));
-
-    expect(screen.getByText('Filters panel content')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Evidence' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Entities' })).not.toBeInTheDocument();
   });
 
-  it('emits the selected evidence file through the callback', () => {
-    const onEvidenceSelect = jest.fn();
-
+  it('Evidence tab shows entitiesPanel by default', () => {
     render(
       <EvidenceSidebar
-        evidence={mockCases[0].evidence}
-        selectedEvidenceId={null}
-        onEvidenceSelect={onEvidenceSelect}
+        filtersPanel={<div>Filters panel content</div>}
+        entitiesPanel={<div>Entities panel content</div>}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Signal_message_export\.json/i }));
+    expect(screen.getByText('Entities panel content')).toBeInTheDocument();
+    expect(screen.queryByText('Filters panel content')).not.toBeInTheDocument();
+  });
 
-    expect(onEvidenceSelect).toHaveBeenCalledTimes(1);
-    expect(onEvidenceSelect.mock.calls[0][0]).toMatchObject({
-      id: 'file-003',
-      name: 'Signal_message_export.json',
-    });
+  it('Filters tab shows filtersPanel', () => {
+    render(
+      <EvidenceSidebar
+        filtersPanel={<div>Filters panel content</div>}
+        entitiesPanel={<div>Entities panel content</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+
+    expect(screen.getByText('Filters panel content')).toBeInTheDocument();
+    expect(screen.queryByText('Entities panel content')).not.toBeInTheDocument();
+  });
+
+  it('shows fallback when no entitiesPanel provided', () => {
+    render(<EvidenceSidebar />);
+
+    expect(screen.getByText('No entities panel provided.')).toBeInTheDocument();
+  });
+
+  it('shows fallback when no filtersPanel provided', () => {
+    render(<EvidenceSidebar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+
+    expect(screen.getByText('Filters are not available yet.')).toBeInTheDocument();
+  });
+
+  it('renders searchPanel above tabs when provided', () => {
+    render(
+      <EvidenceSidebar
+        searchPanel={<div>Search panel content</div>}
+      />,
+    );
+
+    expect(screen.getByText('Search panel content')).toBeInTheDocument();
   });
 });

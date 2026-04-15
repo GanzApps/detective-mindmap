@@ -6,6 +6,7 @@ import EntityModal from '@/components/crud/EntityModal';
 import GraphWorkspace from '@/components/graph/GraphWorkspace';
 import { type GraphWorkspaceExportHandle } from '@/components/graph/GraphWorkspace';
 import AICommandBar from '@/components/layout/AICommandBar';
+import EntitiesPanel from '@/components/layout/EntitiesPanel';
 import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
 import TimelineBar from '@/components/layout/TimelineBar';
 import WorkspaceAnalysisPanel from '@/components/layout/WorkspaceAnalysisPanel';
@@ -91,8 +92,7 @@ export default function CaseWorkspaceShell({
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
-  // Expandable sections inside sidebar
-  const [entitiesExpanded, setEntitiesExpanded] = useState(false);
+  // Expandable connections section inside sidebar
   const [connectionsExpanded, setConnectionsExpanded] = useState(false);
   const activeFilters = useCaseStore(selectActiveFilters);
   const layerPreferences = useCaseStore(selectLayerPreferences);
@@ -277,9 +277,6 @@ export default function CaseWorkspaceShell({
             {/* Evidence sidebar */}
             <div className="flex-1 overflow-y-auto">
               <EvidenceSidebar
-                evidence={caseData.evidence}
-                selectedEvidenceId={highlightedEvidenceId}
-                onEvidenceSelect={onSelectEvidence}
                 searchPanel={searchPanel}
                 filtersPanel={(
                   <WorkspaceFiltersPanel
@@ -291,72 +288,46 @@ export default function CaseWorkspaceShell({
                     dateRange={dateRange}
                   />
                 )}
+                entitiesPanel={(
+                  <EntitiesPanel
+                    nodes={caseData.graph.nodes}
+                    selectedNodeId={selectedNodeId}
+                    highlightedEntityIds={highlightedEntityIds}
+                    onSelectNode={onSelectNode}
+                    onDeleteEntity={(id) => setEntityToDelete(id)}
+                  />
+                )}
               />
             </div>
 
-            {/* Expandable entity/connection lists */}
+            {/* Connections strip */}
             <div className="shrink-0 border-t border-shell-border">
-              {/* Entities */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setEntitiesExpanded((v) => !v)}
-                  className="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
-                >
-                  <span>Entities ({caseData.graph.nodes.length})</span>
-                  <svg className={`h-3 w-3 transition ${entitiesExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {entitiesExpanded && (
-                  <div className="max-h-40 overflow-y-auto px-2 pb-1.5">
-                    {caseData.graph.nodes.map((node) => {
-                      const isSelected = selectedNodeId === node.id;
-                      const isHighlighted = highlightedEntityIds.includes(node.id);
-                      return (
-                        <div key={node.id} className={`mb-1 flex items-center justify-between rounded border px-2 py-1.5 text-xs ${
-                          isSelected ? 'border-shell-accent/40 bg-shell-accent-muted' : isHighlighted ? 'border-amber-400/30 bg-amber-400/10' : 'border-shell-border bg-shell-bg'
-                        }`}>
-                          <button type="button" onClick={() => onSelectNode(isSelected ? null : node.id)} className="flex-1 truncate text-left font-medium text-shell-text-primary">
-                            {node.label}
-                          </button>
-                          <button type="button" onClick={() => setEntityToDelete(node.id)} className="ml-1 text-shell-destructive opacity-60 hover:opacity-100">×</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Connections */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setConnectionsExpanded((v) => !v)}
-                  className="flex w-full items-center justify-between border-t border-shell-border px-2 py-1.5 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
-                >
-                  <span>Connections ({caseData.graph.edges.length})</span>
-                  <svg className={`h-3 w-3 transition ${connectionsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {connectionsExpanded && (
-                  <div className="max-h-40 overflow-y-auto px-2 pb-1.5">
-                    {caseData.graph.edges.map((edge) => {
-                      const source = caseData.graph.nodes.find((n) => n.id === edge.source);
-                      const target = caseData.graph.nodes.find((n) => n.id === edge.target);
-                      return (
-                        <div key={edge.id} className="mb-1 flex items-center justify-between rounded border border-shell-border bg-shell-bg px-2 py-1.5 text-xs">
-                          <span className="flex-1 truncate text-shell-text-primary">
-                            {source?.label ?? '?'} → {target?.label ?? '?'}
-                          </span>
-                          <button type="button" onClick={() => setConnectionToDelete(edge.id)} className="ml-1 text-shell-destructive opacity-60 hover:opacity-100">×</button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={() => setConnectionsExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+              >
+                <span>Connections ({caseData.graph.edges.length})</span>
+                <svg className={`h-3 w-3 transition ${connectionsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {connectionsExpanded && (
+                <div className="max-h-40 overflow-y-auto px-2 pb-1.5">
+                  {caseData.graph.edges.map((edge) => {
+                    const source = caseData.graph.nodes.find((n) => n.id === edge.source);
+                    const target = caseData.graph.nodes.find((n) => n.id === edge.target);
+                    return (
+                      <div key={edge.id} className="mb-1 flex items-center justify-between rounded border border-shell-border bg-shell-bg px-2 py-1.5 text-xs">
+                        <span className="flex-1 truncate text-shell-text-primary">
+                          {source?.label ?? '?'} → {target?.label ?? '?'}
+                        </span>
+                        <button type="button" onClick={() => setConnectionToDelete(edge.id)} className="ml-1 text-shell-destructive opacity-60 hover:opacity-100">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
