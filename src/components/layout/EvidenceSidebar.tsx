@@ -9,26 +9,20 @@ export default function EvidenceSidebar({
   evidence,
   selectedEvidenceId,
   onEvidenceSelect,
+  searchPanel,
   filtersPanel,
 }: {
   evidence: EvidenceCategory[];
   selectedEvidenceId: string | null;
   onEvidenceSelect: (file: EvidenceFile) => void;
+  searchPanel?: ReactNode;
   filtersPanel?: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<RailTab>('evidence');
 
   return (
     <aside className="flex h-full min-h-[620px] flex-col rounded-shell-xl border border-shell-border bg-shell-surface p-shell-md shadow-shell-md">
-      <div className="mb-shell-md">
-        <p className="text-xs font-medium uppercase tracking-widest text-shell-text-muted">
-          Case rail
-        </p>
-        <h2 className="mt-2 text-xl font-semibold text-shell-text-primary">Investigation inputs</h2>
-        <p className="mt-2 text-sm text-shell-text-secondary">
-          Start with raw evidence, then move into filters when you want to shape the graph view.
-        </p>
-      </div>
+      {searchPanel ? <div className="mb-shell-md">{searchPanel}</div> : null}
 
       <div className="mb-shell-md flex rounded-shell-lg border border-shell-border bg-shell-surface-raised p-1">
         <button

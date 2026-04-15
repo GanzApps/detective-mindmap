@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   selectCases,
   selectOpenTabs,
@@ -11,12 +12,14 @@ import {
 import CaseModal from '@/components/crud/CaseModal';
 
 export default function CaseTabBar() {
+  const router = useRouter();
   const cases = useCaseStore(selectCases);
   const openTabs = useCaseStore(selectOpenTabs);
   const activeTabCaseId = useCaseStore(selectActiveTabCaseId);
   const openTab = useCaseStore((state) => state.openTab);
   const closeTab = useCaseStore((state) => state.closeTab);
   const switchTab = useCaseStore((state) => state.switchTab);
+  const goHome = useCaseStore((state) => state.goHome);
 
   const [showCaseModal, setShowCaseModal] = useState(false);
 
@@ -27,7 +30,7 @@ export default function CaseTabBar() {
     return () => window.removeEventListener('gsd:new-case', handler);
   }, []);
 
-  const homeActive = openTabs.length === 0;
+  const homeActive = activeTabCaseId === null;
 
   function handleNewCase(input: CreateCaseInput) {
     const createCase = useCaseStore.getState().createCase;
@@ -42,7 +45,8 @@ export default function CaseTabBar() {
         <button
           type="button"
           onClick={() => {
-            openTabs.forEach((tab) => closeTab(tab.caseId));
+            router.replace('/cases', { scroll: false });
+            goHome();
           }}
           className={`flex h-8 items-center gap-2 rounded-md px-3 text-xs font-medium transition ${
             homeActive

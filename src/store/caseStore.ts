@@ -108,6 +108,7 @@ interface CaseStoreState {
   openTab: (caseId: string, title: string) => void;
   closeTab: (caseId: string) => void;
   switchTab: (caseId: string) => void;
+  goHome: () => void;
   setActiveTabState: <K extends keyof TabWorkspaceState>(
     key: K,
     value: TabWorkspaceState[K],
@@ -225,6 +226,7 @@ export const useCaseStore = create<CaseStoreState>()(persist((set, get) => ({
     };
   }),
   switchTab: (caseId) => set({ activeTabCaseId: caseId }),
+  goHome: () => set({ activeTabCaseId: null }),
   setActiveTabState: (key, value) => set((state) => {
     const activeId = state.activeTabCaseId;
     if (!activeId) return {};
