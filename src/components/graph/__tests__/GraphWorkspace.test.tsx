@@ -111,25 +111,6 @@ describe('GraphWorkspace', () => {
     expect(onSelectNode).toHaveBeenCalledWith(null);
   });
 
-  it('routes renderer switching through the shared workspace toggle', () => {
-    const onSetViewMode = jest.fn();
-
-    render(
-      <GraphWorkspace
-        caseData={mockCases[0]}
-        viewMode="2d"
-        selectedNodeId="node-002"
-        highlightedNodeIds={['node-002']}
-        onSetViewMode={onSetViewMode}
-        onSelectNode={() => {}}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: '3D workspace' }));
-
-    expect(onSetViewMode).toHaveBeenCalledWith('3d');
-  });
-
   it('exposes the active renderer export target through the shared ref', () => {
     const workspaceRef = createRef<GraphWorkspaceExportHandle>();
 

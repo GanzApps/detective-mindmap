@@ -200,49 +200,9 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   }, []);
 
   return (
-    <div data-testid="graph-workspace" className="relative">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
-            Graph workspace
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">Dual renderer continuity</h2>
-          <p className="mt-2 max-w-2xl text-sm text-shell-text-secondary">
-            Both graph systems stay mounted so camera, simulation, and selection context persist while you switch views.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="rounded-shell-pill border border-shell-border bg-shell-surface px-4 py-2 text-sm text-shell-text-secondary">
-            {highlightedNodeIds.length} highlighted
-          </div>
-          <div className="flex rounded-shell-pill border border-shell-border bg-shell-surface p-1">
-            <button
-              type="button"
-              onClick={() => onSetViewMode('2d')}
-              className={`rounded-shell-pill px-4 py-2 text-sm font-medium transition ${
-                viewMode === '2d'
-                  ? 'bg-shell-accent text-white'
-                  : 'text-shell-text-secondary hover:bg-shell-surface-raised'
-              }`}
-            >
-              2D workspace
-            </button>
-            <button
-              type="button"
-              onClick={() => onSetViewMode('3d')}
-              className={`rounded-shell-pill px-4 py-2 text-sm font-medium transition ${
-                viewMode === '3d'
-                  ? 'bg-shell-accent text-white'
-                  : 'text-shell-text-secondary hover:bg-shell-surface-raised'
-              }`}
-            >
-              3D workspace
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative min-h-[680px]">
+    <div data-testid="graph-workspace" className="relative flex h-full flex-col">
+      {/* Graph canvas fills available space — no header panel */}
+      <div className="relative min-h-0 flex-1">
         <div
           ref={forceGraphContainerRef}
           style={{ display: viewMode === '2d' ? 'block' : 'none' }}

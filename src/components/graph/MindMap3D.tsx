@@ -382,21 +382,17 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     <section className="rounded-shell-xl border border-shell-border bg-shell-surface p-6 shadow-shell-lg">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-shell-text-muted">
-            3D Renderer
-          </p>
           <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">MindMap3D</h2>
         </div>
         <div className="flex items-start gap-3">
           <div className="relative w-[280px]">
             <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
-              <span className="text-xs uppercase tracking-[0.2em] text-shell-text-muted">Search nodes</span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(event) => onSearchQueryChange(event.target.value)}
                 placeholder="Search nodes"
-                className="mt-2 w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
+                className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
               />
             </label>
             {searchQuery.trim() ? (

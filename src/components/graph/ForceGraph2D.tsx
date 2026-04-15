@@ -611,20 +611,16 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
             2D Renderer
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-shell-text-primary">ForceGraph2D</h2>
-          <p className="mt-2 max-w-2xl text-sm text-shell-text-secondary">
-            Live force simulation with selectable relationships, bounded pan/zoom, and search-centered navigation.
-          </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-[minmax(240px,320px)_auto]">
           <div className="relative">
             <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-shell-text-muted">Search nodes</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => onSearchQueryChange(event.target.value)}
               placeholder="Search nodes"
-              className="mt-2 w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
+              className="w-full bg-transparent text-sm text-shell-text-primary outline-none placeholder:text-shell-text-muted"
             />
             </label>
             {searchQuery.trim() ? (

@@ -132,7 +132,11 @@ interface CaseStoreState {
 }
 
 function makeId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  // Use crypto.randomUUID when available for collision resistance
+  const unique = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${prefix}-${unique}`;
 }
 
 function mergeCases(existing: Case[], incoming: Case[]) {
@@ -461,19 +465,28 @@ export const useCaseStore = create<CaseStoreState>()(persist((set, get) => ({
   storage: createJSONStorage(() => (
     typeof window === 'undefined' ? noopStorage : window.localStorage
   )),
-  partialize: (state) => ({
-    cases: state.cases,
-    activeCaseId: state.activeCaseId,
-    activeFilters: state.activeFilters,
-    layerPreferences: state.layerPreferences,
-    highlightedEvidenceId: state.highlightedEvidenceId,
-    highlightedEntityIds: state.highlightedEntityIds,
-    viewMode: state.viewMode,
-    // Tab persistence
-    openTabs: state.openTabs,
-    activeTabCaseId: state.activeTabCaseId,
-    perTabState: state.perTabState,
-  }),
+  partialize: (state) => {
+    // Prune perTabState entries for tabs that are no longer open
+    const prunedPerTabState: Record<string, TabWorkspaceState> = {};
+    for (const tab of state.openTabs) {
+      if (state.perTabState[tab.caseId]) {
+        prunedPerTabState[tab.caseId] = state.perTabState[tab.caseId];
+      }
+    }
+    return {
+      cases: state.cases,
+      activeCaseId: state.activeCaseId,
+      activeFilters: state.activeFilters,
+      layerPreferences: state.layerPreferences,
+      highlightedEvidenceId: state.highlightedEvidenceId,
+      highlightedEntityIds: state.highlightedEntityIds,
+      viewMode: state.viewMode,
+      // Tab persistence (pruned)
+      openTabs: state.openTabs,
+      activeTabCaseId: state.activeTabCaseId,
+      perTabState: prunedPerTabState,
+    };
+  },
 }));
 
 export const selectCases = (state: CaseStoreState) => state.cases;

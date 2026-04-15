@@ -101,7 +101,6 @@ describe('app shell smoke', () => {
       />,
     );
 
-    expect(html).toContain('Dual renderer continuity');
     expect(html).toContain('ForceGraph2D');
     expect(html).toContain('MindMap3D');
     expect(html).toContain('Minimap');
@@ -150,7 +149,6 @@ describe('app shell smoke', () => {
     expect(html).toContain('Raw Evidence');
     expect(html).toContain('Filters &amp; Layers');
     expect(html).toContain('Export');
-    expect(html).toContain('Graph workspace');
     expect(html).toContain('Marco Delgado');
     expect(html).toContain('Investigation command center');
     expect(html).toContain('Timeline');

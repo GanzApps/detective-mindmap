@@ -133,7 +133,7 @@ export default function CaseWorkspacePage({ caseId }: { caseId: string }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-8 text-slate-100">
+    <main className="min-h-screen bg-slate-950 text-slate-100">
       <CaseWorkspaceShell
         caseData={resolvedCaseData}
         highlightedEvidenceId={highlightedEvidenceId}

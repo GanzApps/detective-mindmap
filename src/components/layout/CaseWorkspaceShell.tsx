@@ -6,7 +6,6 @@ import EntityModal from '@/components/crud/EntityModal';
 import GraphWorkspace from '@/components/graph/GraphWorkspace';
 import { type GraphWorkspaceExportHandle } from '@/components/graph/GraphWorkspace';
 import AICommandBar from '@/components/layout/AICommandBar';
-import CaseHeader from '@/components/layout/CaseHeader';
 import EvidenceSidebar from '@/components/layout/EvidenceSidebar';
 import TimelineBar from '@/components/layout/TimelineBar';
 import WorkspaceAnalysisPanel from '@/components/layout/WorkspaceAnalysisPanel';
@@ -204,7 +203,7 @@ export default function CaseWorkspaceShell({
       <div className="flex flex-1 flex-row">
         {/* Sidebar — collapsible, fixed width when open */}
         {sidebarOpen && (
-          <div className="flex w-72 shrink-0 flex-col border-r border-shell-border bg-shell-surface">
+          <div className="flex w-80 shrink-0 flex-col border-r border-shell-border bg-shell-surface">
             {/* Evidence sidebar */}
             <div className="flex-1 overflow-y-auto">
               <EvidenceSidebar
@@ -231,7 +230,7 @@ export default function CaseWorkspaceShell({
                 <button
                   type="button"
                   onClick={() => setEntitiesExpanded((v) => !v)}
-                  className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+                  className="flex w-full items-center justify-between px-2 py-1.5 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
                 >
                   <span>Entities ({caseData.graph.nodes.length})</span>
                   <svg className={`h-3 w-3 transition ${entitiesExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -239,7 +238,7 @@ export default function CaseWorkspaceShell({
                   </svg>
                 </button>
                 {entitiesExpanded && (
-                  <div className="max-h-40 overflow-y-auto px-3 pb-2">
+                  <div className="max-h-40 overflow-y-auto px-2 pb-1.5">
                     {caseData.graph.nodes.map((node) => {
                       const isSelected = selectedNodeId === node.id;
                       const isHighlighted = highlightedEntityIds.includes(node.id);
@@ -263,7 +262,7 @@ export default function CaseWorkspaceShell({
                 <button
                   type="button"
                   onClick={() => setConnectionsExpanded((v) => !v)}
-                  className="flex w-full items-center justify-between border-t border-shell-border px-3 py-2 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+                  className="flex w-full items-center justify-between border-t border-shell-border px-2 py-1.5 text-xs font-medium text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
                 >
                   <span>Connections ({caseData.graph.edges.length})</span>
                   <svg className={`h-3 w-3 transition ${connectionsExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -271,7 +270,7 @@ export default function CaseWorkspaceShell({
                   </svg>
                 </button>
                 {connectionsExpanded && (
-                  <div className="max-h-40 overflow-y-auto px-3 pb-2">
+                  <div className="max-h-40 overflow-y-auto px-2 pb-1.5">
                     {caseData.graph.edges.map((edge) => {
                       const source = caseData.graph.nodes.find((n) => n.id === edge.source);
                       const target = caseData.graph.nodes.find((n) => n.id === edge.target);
@@ -293,8 +292,8 @@ export default function CaseWorkspaceShell({
 
         {/* Center: Graph + Timeline + AI Bar */}
         <div className="flex min-w-0 flex-1 flex-col">
-          {/* Graph canvas — minimum height for visibility */}
-          <div className="min-h-[500px] flex-1 bg-shell-bg">
+          {/* Graph canvas — fills available space, no fixed minimum */}
+          <div className="min-h-0 flex-1 bg-shell-bg">
             <GraphWorkspace
               ref={graphWorkspaceRef}
               {...graphWorkspaceProps}
