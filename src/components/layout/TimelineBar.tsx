@@ -31,7 +31,9 @@ export default function TimelineBar({
   selectedNodeLabel: string;
   highlightedCount: number;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+
   const timelineEvents = useMemo(
     () => caseData.evidence
       .flatMap((category) => category.files)
@@ -41,73 +43,103 @@ export default function TimelineBar({
   );
 
   return (
-    <section className="rounded-shell-xl border border-shell-border bg-shell-surface shadow-shell-sm">
-      <button
-        type="button"
-        aria-expanded={isExpanded}
-        onClick={() => setIsExpanded((current) => !current)}
-        className="flex w-full items-center justify-between gap-shell-md px-shell-md py-shell-md text-left"
-      >
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-shell-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-shell-text-muted">
-              Timeline
-            </p>
-            <span className="rounded-shell-pill border border-shell-border bg-shell-surface-raised px-3 py-1 text-xs text-shell-text-secondary">
-              {timelineEvents.length} events
-            </span>
-          </div>
-          <p className="mt-2 text-sm text-shell-text-secondary">
-            Chronology stays docked in the workspace and expands only when you need the sequence.
-          </p>
+    <div className="border-t border-shell-border bg-shell-surface">
+      {/* Header strip — always visible, single line */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        {/* Left: label + count + help */}
+        <button
+          type="button"
+          aria-label="Toggle timeline"
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded((v) => !v)}
+          className="flex items-center gap-2 text-left"
+        >
+          <span className="text-xs font-medium uppercase tracking-[0.22em] text-shell-text-muted">
+            Timeline
+          </span>
+          <span className="rounded-full border border-shell-border bg-shell-surface-raised px-2 py-0.5 text-[10px] text-shell-text-secondary">
+            {timelineEvents.length} events
+          </span>
+          <svg
+            className={`h-3 w-3 text-shell-text-muted transition ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* (?) help tooltip */}
+        <div className="relative">
+          <button
+            type="button"
+            aria-label="Timeline help"
+            onMouseEnter={() => setTooltipVisible(true)}
+            onMouseLeave={() => setTooltipVisible(false)}
+            onFocus={() => setTooltipVisible(true)}
+            onBlur={() => setTooltipVisible(false)}
+            className="flex h-4 w-4 items-center justify-center rounded-full border border-shell-border bg-shell-surface-raised text-[9px] font-bold text-shell-text-muted transition hover:border-shell-accent/40 hover:text-shell-accent"
+          >
+            ?
+          </button>
+          {tooltipVisible && (
+            <div
+              role="tooltip"
+              className="absolute bottom-full left-0 z-50 mb-2 w-56 rounded-lg border border-shell-border bg-shell-surface px-3 py-2 text-xs text-shell-text-secondary shadow-shell-lg"
+            >
+              Chronology stays docked in the workspace and expands only when you need the sequence.
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-shell-sm">
-          <span className="rounded-shell-pill border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
-            {caseData.status}
-          </span>
-          <span className="rounded-shell-pill border border-shell-border bg-shell-surface-raised px-3 py-1 text-xs text-shell-text-secondary">
-            Updated {formatUpdatedAt(caseData.updatedAt)}
-          </span>
-          <span className="text-lg text-shell-text-muted">{isExpanded ? '⌄' : '⌃'}</span>
-        </div>
-      </button>
+        <div className="mx-1 h-3 w-px bg-shell-border" />
 
-      {isExpanded ? (
-        <div className="border-t border-shell-border px-shell-md py-shell-md">
-          <div className="mb-shell-md grid gap-shell-sm md:grid-cols-3">
-            <div className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">Active evidence</p>
-              <p className="mt-2 text-sm font-medium text-shell-text-primary">{activeEvidenceLabel}</p>
-            </div>
-            <div className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">Selected node</p>
-              <p className="mt-2 text-sm font-medium text-shell-text-primary">{selectedNodeLabel}</p>
-            </div>
-            <div className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-shell-md py-shell-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">Focused network</p>
-              <p className="mt-2 text-sm font-medium text-shell-text-primary">{highlightedCount} highlighted</p>
-            </div>
-          </div>
+        {/* Status chips — compact, always visible */}
+        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+          {caseData.status}
+        </span>
+        <span className="text-[10px] text-shell-text-muted">
+          Updated {formatUpdatedAt(caseData.updatedAt)}
+        </span>
+      </div>
 
-          <div className="grid gap-shell-sm xl:grid-cols-4">
+      {/* Horizontally scrollable event strip */}
+      {isExpanded && (
+        <div className="overflow-x-auto border-t border-shell-border">
+          <div className="flex gap-2 px-3 py-2" style={{ width: 'max-content' }}>
+            {/* Context chips — inline in the scroll area */}
+            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
+              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Evidence</span>
+              <span className="max-w-[120px] truncate font-medium text-shell-text-primary">{activeEvidenceLabel}</span>
+            </div>
+            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
+              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Node</span>
+              <span className="max-w-[120px] truncate font-medium text-shell-text-primary">{selectedNodeLabel}</span>
+            </div>
+            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
+              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Network</span>
+              <span className="font-medium text-shell-text-primary">{highlightedCount} highlighted</span>
+            </div>
+
+            <div className="mx-1 self-stretch border-l border-shell-border" />
+
+            {/* Event cards */}
             {timelineEvents.map((event) => (
               <article
                 key={event.id}
-                className="rounded-shell-lg border border-shell-border bg-shell-surface-raised px-shell-md py-shell-md"
+                className="flex w-36 shrink-0 flex-col gap-1 rounded-lg border border-shell-border bg-shell-surface-raised px-3 py-2"
               >
-                <p className="text-xs uppercase tracking-[0.18em] text-shell-text-muted">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-shell-text-muted">
                   {formatEventDate(event.addedAt)}
                 </p>
-                <p className="mt-2 text-sm font-medium text-shell-text-primary">{event.name}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-shell-text-secondary">
+                <p className="truncate text-xs font-medium text-shell-text-primary">{event.name}</p>
+                <p className="text-[10px] uppercase tracking-[0.14em] text-shell-text-secondary">
                   {event.type.replace('_', ' ')}
                 </p>
               </article>
             ))}
           </div>
         </div>
-      ) : null}
-    </section>
+      )}
+    </div>
   );
 }

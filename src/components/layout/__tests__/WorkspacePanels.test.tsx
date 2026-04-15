@@ -20,24 +20,26 @@ describe('Workspace panels', () => {
     expect(screen.queryByText('Filters content')).not.toBeInTheDocument();
   });
 
-  it('keeps the timeline collapsed until the handle is used', () => {
+  it('shows the timeline strip expanded by default and collapses on toggle', () => {
     render(
       <TimelineBar
         caseData={mockCases[0]}
-        activeEvidenceLabel="iPhone_14_extraction.zip"
+        activeEvidenceLabel="Encrypted handset dump"
         selectedNodeLabel="Marco Delgado"
         highlightedCount={2}
       />,
     );
 
-    const toggle = screen.getByRole('button', { name: /timeline/i });
+    const toggle = screen.getByRole('button', { name: /toggle timeline/i });
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('Active evidence')).not.toBeInTheDocument();
+    // Expanded by default — context chips visible
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Encrypted handset dump')).toBeInTheDocument();
 
     fireEvent.click(toggle);
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Active evidence')).toBeInTheDocument();
+    // Collapsed — strip hidden
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Encrypted handset dump')).not.toBeInTheDocument();
   });
 });
