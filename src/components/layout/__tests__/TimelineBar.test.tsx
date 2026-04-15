@@ -5,55 +5,32 @@ import TimelineBar from '@/components/layout/TimelineBar';
 import { mockCases } from '@/lib/data/mockCases';
 
 describe('TimelineBar', () => {
-  it('renders expanded by default showing event cards and context chips', () => {
-    render(
-      <TimelineBar
-        caseData={mockCases[0]}
-        activeEvidenceLabel="Encrypted handset dump"
-        selectedNodeLabel="Marco Delgado"
-        highlightedCount={2}
-      />,
-    );
+  it('renders expanded by default with event cards and timeline track dots', () => {
+    render(<TimelineBar caseData={mockCases[0]} />);
 
     const toggle = screen.getByRole('button', { name: /toggle timeline/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Timeline')).toBeInTheDocument();
-    expect(screen.getByText(/8 events/i)).toBeInTheDocument();
+    expect(screen.getByText(/\d+ events/i)).toBeInTheDocument();
 
-    // Context chips visible when expanded
-    expect(screen.getByText('Encrypted handset dump')).toBeInTheDocument();
-    expect(screen.getByText('Marco Delgado')).toBeInTheDocument();
-    expect(screen.getByText(/2 highlighted/i)).toBeInTheDocument();
+    // Event cards visible when expanded
+    const articles = document.querySelectorAll('article');
+    expect(articles.length).toBeGreaterThan(0);
   });
 
-  it('collapses and hides event strip when toggled', () => {
-    render(
-      <TimelineBar
-        caseData={mockCases[0]}
-        activeEvidenceLabel="Encrypted handset dump"
-        selectedNodeLabel="Marco Delgado"
-        highlightedCount={2}
-      />,
-    );
+  it('collapses and hides the strip when the toggle is clicked', () => {
+    render(<TimelineBar caseData={mockCases[0]} />);
 
     const toggle = screen.getByRole('button', { name: /toggle timeline/i });
 
     fireEvent.click(toggle);
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('Encrypted handset dump')).not.toBeInTheDocument();
-    expect(screen.queryByText('Marco Delgado')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('article').length).toBe(0);
   });
 
-  it('shows description tooltip when (?) button is hovered', () => {
-    render(
-      <TimelineBar
-        caseData={mockCases[0]}
-        activeEvidenceLabel="None"
-        selectedNodeLabel="None"
-        highlightedCount={0}
-      />,
-    );
+  it('shows description tooltip on (?) hover and hides on mouse-leave', () => {
+    render(<TimelineBar caseData={mockCases[0]} />);
 
     const helpBtn = screen.getByRole('button', { name: /timeline help/i });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
@@ -64,5 +41,22 @@ describe('TimelineBar', () => {
 
     fireEvent.mouseLeave(helpBtn);
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('renders a connecting line element between each pair of adjacent events', () => {
+    render(<TimelineBar caseData={mockCases[0]} />);
+
+    const articles = document.querySelectorAll('article');
+    // n events → n-1 connector lines (hr-like divs between cards)
+    const connectors = document.querySelectorAll('[class*="from-shell-accent"]');
+    expect(connectors.length).toBe(articles.length - 1);
+  });
+
+  it('does not render Evidence / Node / Network context chips', () => {
+    render(<TimelineBar caseData={mockCases[0]} />);
+
+    expect(screen.queryByText(/^Evidence$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Node$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Network$/i)).not.toBeInTheDocument();
   });
 });

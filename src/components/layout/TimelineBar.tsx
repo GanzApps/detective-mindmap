@@ -22,14 +22,14 @@ function formatEventDate(value: string) {
 
 export default function TimelineBar({
   caseData,
-  activeEvidenceLabel,
-  selectedNodeLabel,
-  highlightedCount,
 }: {
   caseData: Case;
-  activeEvidenceLabel: string;
-  selectedNodeLabel: string;
-  highlightedCount: number;
+  /** @deprecated — no longer shown in the timeline strip */
+  activeEvidenceLabel?: string;
+  /** @deprecated — no longer shown in the timeline strip */
+  selectedNodeLabel?: string;
+  /** @deprecated — no longer shown in the timeline strip */
+  highlightedCount?: number;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [tooltipVisible, setTooltipVisible] = useState(false);
@@ -38,37 +38,25 @@ export default function TimelineBar({
     () => caseData.evidence
       .flatMap((category) => category.files)
       .sort((left, right) => left.addedAt.localeCompare(right.addedAt))
-      .slice(0, 8),
+      .slice(0, 12),
     [caseData.evidence],
   );
 
   return (
     <div className="border-t border-shell-border bg-shell-surface">
-      {/* Header strip — always visible, single line */}
-      <div className="flex items-center gap-2 px-3 py-1.5">
-        {/* Left: label + count + help */}
-        <button
-          type="button"
-          aria-label="Toggle timeline"
-          aria-expanded={isExpanded}
-          onClick={() => setIsExpanded((v) => !v)}
-          className="flex items-center gap-2 text-left"
-        >
-          <span className="text-xs font-medium uppercase tracking-[0.22em] text-shell-text-muted">
-            Timeline
-          </span>
-          <span className="rounded-full border border-shell-border bg-shell-surface-raised px-2 py-0.5 text-[10px] text-shell-text-secondary">
-            {timelineEvents.length} events
-          </span>
-          <svg
-            className={`h-3 w-3 text-shell-text-muted transition ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
 
-        {/* (?) help tooltip */}
+      {/* ── Header: label left, controls right ── */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
+
+        {/* Left group */}
+        <span className="text-xs font-medium uppercase tracking-[0.22em] text-shell-text-muted">
+          Timeline
+        </span>
+        <span className="rounded-full border border-shell-border bg-shell-surface-raised px-2 py-0.5 text-[10px] text-shell-text-secondary">
+          {timelineEvents.length} events
+        </span>
+
+        {/* (?) help */}
         <div className="relative">
           <button
             type="button"
@@ -91,51 +79,64 @@ export default function TimelineBar({
           )}
         </div>
 
-        <div className="mx-1 h-3 w-px bg-shell-border" />
+        {/* Spacer pushes right group to far edge */}
+        <div className="flex-1" />
 
-        {/* Status chips — compact, always visible */}
+        {/* Right group: status + updated + collapse */}
         <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
           {caseData.status}
         </span>
         <span className="text-[10px] text-shell-text-muted">
           Updated {formatUpdatedAt(caseData.updatedAt)}
         </span>
+
+        <button
+          type="button"
+          aria-label="Toggle timeline"
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded((v) => !v)}
+          className="ml-1 rounded p-1 text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+        >
+          <svg
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
-      {/* Horizontally scrollable event strip */}
+      {/* ── Horizontal timeline strip ── */}
       {isExpanded && (
         <div className="overflow-x-auto border-t border-shell-border">
-          <div className="flex gap-2 px-3 py-2" style={{ width: 'max-content' }}>
-            {/* Context chips — inline in the scroll area */}
-            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
-              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Evidence</span>
-              <span className="max-w-[120px] truncate font-medium text-shell-text-primary">{activeEvidenceLabel}</span>
-            </div>
-            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
-              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Node</span>
-              <span className="max-w-[120px] truncate font-medium text-shell-text-primary">{selectedNodeLabel}</span>
-            </div>
-            <div className="flex shrink-0 flex-col justify-center gap-1 rounded-lg border border-shell-border bg-shell-bg px-3 py-2 text-[10px]">
-              <span className="uppercase tracking-[0.16em] text-shell-text-muted">Network</span>
-              <span className="font-medium text-shell-text-primary">{highlightedCount} highlighted</span>
-            </div>
+          <div className="flex items-start px-4 py-3" style={{ width: 'max-content' }}>
+            {timelineEvents.map((event, index) => (
+              <div key={event.id} className="flex shrink-0 items-start">
 
-            <div className="mx-1 self-stretch border-l border-shell-border" />
+                {/* Card column: dot on track + content below */}
+                <div className="flex w-40 flex-col items-center">
+                  {/* Track dot */}
+                  <div className="mb-2 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-shell-accent bg-shell-bg shadow-sm" />
 
-            {/* Event cards */}
-            {timelineEvents.map((event) => (
-              <article
-                key={event.id}
-                className="flex w-36 shrink-0 flex-col gap-1 rounded-lg border border-shell-border bg-shell-surface-raised px-3 py-2"
-              >
-                <p className="text-[10px] uppercase tracking-[0.14em] text-shell-text-muted">
-                  {formatEventDate(event.addedAt)}
-                </p>
-                <p className="truncate text-xs font-medium text-shell-text-primary">{event.name}</p>
-                <p className="text-[10px] uppercase tracking-[0.14em] text-shell-text-secondary">
-                  {event.type.replace('_', ' ')}
-                </p>
-              </article>
+                  {/* Event card */}
+                  <article className="w-full rounded-lg border border-shell-border bg-shell-surface-raised px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-shell-text-muted">
+                      {formatEventDate(event.addedAt)}
+                    </p>
+                    <p className="mt-1 line-clamp-3 text-xs font-medium leading-snug text-shell-text-primary">
+                      {event.name}
+                    </p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-shell-text-secondary">
+                      {event.type.replace('_', ' ')}
+                    </p>
+                  </article>
+                </div>
+
+                {/* Connector line to next node (skip on last) */}
+                {index < timelineEvents.length - 1 && (
+                  <div className="mt-[4.5px] h-px w-5 shrink-0 bg-gradient-to-r from-shell-accent/50 to-shell-accent/20" />
+                )}
+              </div>
             ))}
           </div>
         </div>

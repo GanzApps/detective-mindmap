@@ -21,25 +21,18 @@ describe('Workspace panels', () => {
   });
 
   it('shows the timeline strip expanded by default and collapses on toggle', () => {
-    render(
-      <TimelineBar
-        caseData={mockCases[0]}
-        activeEvidenceLabel="Encrypted handset dump"
-        selectedNodeLabel="Marco Delgado"
-        highlightedCount={2}
-      />,
-    );
+    render(<TimelineBar caseData={mockCases[0]} />);
 
     const toggle = screen.getByRole('button', { name: /toggle timeline/i });
 
-    // Expanded by default — context chips visible
+    // Expanded by default — event cards visible
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Encrypted handset dump')).toBeInTheDocument();
+    expect(document.querySelectorAll('article').length).toBeGreaterThan(0);
 
     fireEvent.click(toggle);
 
     // Collapsed — strip hidden
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('Encrypted handset dump')).not.toBeInTheDocument();
+    expect(document.querySelectorAll('article').length).toBe(0);
   });
 });

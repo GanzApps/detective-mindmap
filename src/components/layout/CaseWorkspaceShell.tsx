@@ -133,8 +133,6 @@ export default function CaseWorkspaceShell({
     onSetViewMode,
     onSelectNode,
   };
-  const activeEvidenceLabel = activeEvidenceFile ? getEvidenceLabel(activeEvidenceFile) : 'None selected';
-  const selectedNodeLabel = selectedNode?.label ?? 'No active node';
   const evidenceFiles = caseData.evidence.flatMap((category) => category.files);
   const evidenceDates = evidenceFiles
     .map((file) => file.addedAt)
@@ -375,12 +373,7 @@ export default function CaseWorkspaceShell({
 
           {/* Timeline — collapsible */}
           <div className="shrink-0 border-t border-shell-border">
-            <TimelineBar
-              caseData={caseData}
-              activeEvidenceLabel={activeEvidenceLabel}
-              selectedNodeLabel={selectedNodeLabel}
-              highlightedCount={highlightedEntityIds.length}
-            />
+            <TimelineBar caseData={caseData} />
           </div>
 
           {/* AI Command Bar — fixed height */}
