@@ -187,6 +187,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
     }
   }, [viewMode]);
 
+  const handleMinimapPanMove = useCallback((dnx: number, dny: number) => {
+    if (viewMode === '2d') {
+      forceGraphRef.current?.panMove(dnx, dny);
+    } else {
+      mindMapRef.current?.panMove(dnx, dny);
+    }
+  }, [viewMode]);
+
   const handleUpdateNodePosition = useCallback((nodeId: string, position: SharedNodePosition) => {
     setNodePositions((current) => {
       const existing = current[nodeId];
@@ -256,6 +264,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
             state={minimapState}
             width={minimapWidth}
             onPanTo={handleMinimapPanTo}
+            onPanMove={handleMinimapPanMove}
           />
         )}
       </div>

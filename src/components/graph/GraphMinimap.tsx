@@ -7,30 +7,34 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
+function readNormalized(event: React.MouseEvent<SVGSVGElement>): { nx: number; ny: number } | null {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return null;
+  return {
+    nx: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+    ny: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+  };
+}
+
 export default function GraphMinimap({
   state,
   width,
   onPanTo,
+  onPanMove,
 }: {
   state: GraphMinimapState;
   width?: number;
   onPanTo?: (nx: number, ny: number) => void;
+  onPanMove?: (dnx: number, dny: number) => void;
 }) {
   const isDraggingRef = useRef(false);
+  const prevPosRef = useRef<{ nx: number; ny: number } | null>(null);
   const viewBoxSize = 100;
   const viewportX = clamp01(state.viewport.x) * viewBoxSize;
   const viewportY = clamp01(state.viewport.y) * viewBoxSize;
   const viewportWidth = clamp01(state.viewport.width) * viewBoxSize;
   const viewportHeight = clamp01(state.viewport.height) * viewBoxSize;
-
-  function handlePointerEvent(event: React.MouseEvent<SVGSVGElement>) {
-    if (!onPanTo) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-    const nx = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const ny = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    onPanTo(nx, ny);
-  }
+  const interactive = !!(onPanTo || onPanMove);
 
   return (
     <div
@@ -40,21 +44,36 @@ export default function GraphMinimap({
       <svg
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
         aria-label="Workspace minimap"
-        className={`w-full ${onPanTo ? 'cursor-crosshair' : ''} aspect-square overflow-hidden rounded-shell-xl bg-shell-bg`}
+        className={`w-full aspect-square overflow-hidden rounded-shell-xl bg-shell-bg/50 ${interactive ? 'cursor-crosshair' : ''}`}
         onMouseDown={(event) => {
-          if (!onPanTo) return;
+          if (!interactive) return;
           isDraggingRef.current = true;
-          handlePointerEvent(event);
+          const pos = readNormalized(event);
+          if (!pos) return;
+          prevPosRef.current = pos;
+          onPanTo?.(pos.nx, pos.ny);
         }}
         onMouseMove={(event) => {
-          if (!isDraggingRef.current || !onPanTo || event.buttons === 0) return;
-          handlePointerEvent(event);
+          if (!isDraggingRef.current || !onPanMove || event.buttons === 0) return;
+          const pos = readNormalized(event);
+          if (!pos) return;
+          const prev = prevPosRef.current;
+          if (prev) {
+            const dnx = pos.nx - prev.nx;
+            const dny = pos.ny - prev.ny;
+            if (dnx !== 0 || dny !== 0) {
+              onPanMove(dnx, dny);
+            }
+          }
+          prevPosRef.current = pos;
         }}
         onMouseUp={() => {
           isDraggingRef.current = false;
+          prevPosRef.current = null;
         }}
         onMouseLeave={() => {
           isDraggingRef.current = false;
+          prevPosRef.current = null;
         }}
       >
         {state.points.map((point) => {

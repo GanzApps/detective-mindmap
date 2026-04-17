@@ -36,6 +36,7 @@ export interface ForceGraph2DExportHandle {
   redrawForExport: () => void;
   captureDataUrl: () => string | null;
   panTo: (nx: number, ny: number) => void;
+  panMove: (dnx: number, dny: number) => void;
 }
 
 function getFitTransform(
@@ -237,6 +238,22 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
           viewportRef.current.width / 2 - worldX * k,
           viewportRef.current.height / 2 - worldY * k,
         )
+        .scale(k);
+      selection.call(behavior.transform, nextTransform);
+      userAdjustedViewportRef.current = true;
+      emitMinimapState();
+    },
+    panMove: (dnx: number, dny: number) => {
+      const selection = d3SelectionRef.current;
+      const behavior = zoomBehaviorRef.current;
+      if (!selection || !behavior || nodesRef.current.length === 0) return;
+      const bounds = getGraphBounds(nodesRef.current);
+      const k = transformRef.current.k;
+      // dnx/dny are minimap-space fractions of the graph bounds
+      const dx = -dnx * bounds.width * k;
+      const dy = -dny * bounds.height * k;
+      const nextTransform = zoomIdentity
+        .translate(transformRef.current.x + dx, transformRef.current.y + dy)
         .scale(k);
       selection.call(behavior.transform, nextTransform);
       userAdjustedViewportRef.current = true;

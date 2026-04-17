@@ -261,12 +261,10 @@ export default function CaseWorkspaceShell({
           <button
             type="button"
             onClick={() => setShowMinimap((v) => !v)}
-            className={`rounded p-1 transition ${showMinimap ? 'text-shell-accent' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+            className={`rounded px-2 py-1 text-xs font-medium transition ${showMinimap ? 'bg-shell-accent-muted text-shell-accent' : 'text-shell-text-muted opacity-50 hover:opacity-75'}`}
             title="Toggle minimap"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" />
-            </svg>
+            Minimap
           </button>
           <button
             type="button"

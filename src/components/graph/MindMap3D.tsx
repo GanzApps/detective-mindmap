@@ -18,6 +18,7 @@ export interface MindMap3DExportHandle {
   redrawForExport: () => void;
   captureDataUrl: () => string | null;
   panTo: (nx: number, ny: number) => void;
+  panMove: (dnx: number, dny: number) => void;
 }
 
 const MindMap3D = forwardRef<MindMap3DExportHandle, {
@@ -185,6 +186,27 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       const targetY = minY + ny * (maxY - minY);
       cameraRef.current.offsetX += viewport.width / 2 - targetX;
       cameraRef.current.offsetY += viewport.height / 2 - targetY;
+      autoRotateRef.current = false;
+      needsRedrawRef.current = true;
+      emitMinimapState();
+    },
+    panMove: (dnx: number, dny: number) => {
+      const frame = frameRef.current;
+      if (!frame || frame.projectedNodes.length === 0) return;
+      const projectedNodes = frame.projectedNodes;
+      // Spread is translation-invariant: maxX - minX is unaffected by offsetX changes,
+      // so this remains accurate even with stale projected positions during drag.
+      const spreadX = Math.max(
+        Math.max(...projectedNodes.map((n) => n.sx)) - Math.min(...projectedNodes.map((n) => n.sx)),
+        1,
+      );
+      const spreadY = Math.max(
+        Math.max(...projectedNodes.map((n) => n.sy)) - Math.min(...projectedNodes.map((n) => n.sy)),
+        1,
+      );
+      // Drag right on minimap (dnx > 0) → pan camera right → nodes shift left → offsetX decreases
+      cameraRef.current.offsetX -= dnx * spreadX;
+      cameraRef.current.offsetY -= dny * spreadY;
       autoRotateRef.current = false;
       needsRedrawRef.current = true;
       emitMinimapState();
