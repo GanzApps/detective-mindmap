@@ -155,6 +155,14 @@ export default function CaseWorkspaceShell({
     }
   }, [selectedNodeId]);
 
+  useEffect(() => {
+    if (selectedNodeId !== null || aiResult !== null) {
+      setAnalysisOpen(true);
+    } else {
+      setAnalysisOpen(false);
+    }
+  }, [selectedNodeId, aiResult]);
+
   const searchPanel = (
     <div className="relative">
       <label className="block rounded-shell-lg border border-shell-border bg-shell-surface-raised px-4 py-3">
@@ -268,16 +276,6 @@ export default function CaseWorkspaceShell({
               Minimap
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setAnalysisOpen((v) => !v)}
-            className={`rounded p-1 transition ${analysisOpen ? 'text-shell-accent' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
-            title="Toggle analysis panel"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -371,14 +369,20 @@ export default function CaseWorkspaceShell({
           </div>
         </div>
 
-        {/* Analysis panel — collapsible */}
-        {analysisOpen && (
-          <div className="flex w-80 shrink-0 flex-col border-l border-shell-border bg-shell-surface">
+        {/* Analysis panel — always mounted, width animates open/closed */}
+        <div
+          data-testid="analysis-panel-wrapper"
+          className={`shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${analysisOpen ? 'w-80' : 'w-0'}`}
+        >
+          <div className="flex h-full w-80 flex-col border-l border-shell-border bg-shell-surface">
             <div className="flex items-center justify-between border-b border-shell-border px-3 py-1.5">
               <span className="text-xs font-medium text-shell-text-muted">Analysis</span>
               <button
                 type="button"
-                onClick={() => setAnalysisOpen(false)}
+                onClick={() => {
+                  onSelectNode(null);
+                  onDismissAIResult();
+                }}
                 className="rounded p-1 text-shell-text-muted transition hover:text-shell-text-secondary"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -397,7 +401,7 @@ export default function CaseWorkspaceShell({
               />
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       <EntityModal
