@@ -84,6 +84,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
 }, ref) {
   const [nodePositions, setNodePositions] = useState<Record<string, SharedNodePosition>>({});
   const [minimapWidth, setMinimapWidth] = useState(144);
+  const [minimapHeight, setMinimapHeight] = useState(108); // default 4:3
   const graphCanvasContainerRef = useRef<HTMLDivElement | null>(null);
   const fallbackMinimapState = useMemo(
     () => buildFallbackMinimapState(caseData.graph, viewMode, selectedNodeId),
@@ -109,8 +110,11 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
     const el = graphCanvasContainerRef.current;
     if (!el) return;
     const observer = new ResizeObserver(([entry]) => {
-      const w = entry.contentRect.width;
-      setMinimapWidth(Math.max(80, Math.min(240, Math.round(w * 0.2))));
+      const { width, height } = entry.contentRect;
+      const w = Math.max(80, Math.min(240, Math.round(width * 0.2)));
+      const h = width > 0 ? Math.round(w * height / width) : w;
+      setMinimapWidth(w);
+      setMinimapHeight(h);
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -263,6 +267,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
           <GraphMinimap
             state={minimapState}
             width={minimapWidth}
+            height={minimapHeight}
             onPanTo={handleMinimapPanTo}
             onPanMove={handleMinimapPanMove}
           />

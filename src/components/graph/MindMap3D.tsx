@@ -110,6 +110,17 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       1 - viewportHeight,
     );
 
+    const selId = selectedNodeIdRef.current;
+    const relatedIds = selId
+      ? new Set(
+          graph.edges.flatMap((e) =>
+            e.source === selId ? [e.target]
+            : e.target === selId ? [e.source]
+            : [],
+          ),
+        )
+      : null;
+
     onMinimapStateChange({
       label: '3D',
       points: projectedNodes.map((node) => ({
@@ -117,8 +128,9 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
         x: (node.sx - minX) / width,
         y: (node.sy - minY) / height,
         color: ENTITY_TYPE_COLOR[node.node.type],
-        active: selectedNodeIdRef.current === node.id,
+        active: selId === node.id,
         dimmed: !activeEntityTypesRef.current.includes(node.node.type),
+        related: relatedIds ? relatedIds.has(node.id) : false,
       })),
       viewport: {
         x: viewportX,
@@ -187,8 +199,9 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       cameraRef.current.offsetX += viewport.width / 2 - targetX;
       cameraRef.current.offsetY += viewport.height / 2 - targetY;
       autoRotateRef.current = false;
-      needsRedrawRef.current = true;
-      emitMinimapState();
+      // Immediately redraw so frameRef.current reflects the new offsetX/Y.
+      // This ensures the first panMove after a click uses accurate projected positions.
+      drawCurrentFrame();
     },
     panMove: (dnx: number, dny: number) => {
       const frame = frameRef.current;

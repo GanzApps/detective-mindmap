@@ -5,6 +5,7 @@ export interface GraphMinimapPoint {
   color: string;
   active?: boolean;
   dimmed?: boolean;
+  related?: boolean;
 }
 
 export interface GraphMinimapViewport {

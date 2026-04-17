@@ -258,14 +258,16 @@ export default function CaseWorkspaceShell({
           >
             + Entity
           </button>
-          <button
-            type="button"
-            onClick={() => setShowMinimap((v) => !v)}
-            className={`rounded px-2 py-1 text-xs font-medium transition ${showMinimap ? 'bg-shell-accent-muted text-shell-accent' : 'text-shell-text-muted opacity-50 hover:opacity-75'}`}
-            title="Toggle minimap"
-          >
-            Minimap
-          </button>
+          <div className="flex rounded-lg border border-shell-border bg-shell-bg p-0.5">
+            <button
+              type="button"
+              onClick={() => setShowMinimap((v) => !v)}
+              className={`rounded px-2 py-1 text-xs font-medium transition ${showMinimap ? 'bg-shell-accent text-white' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+              title="Toggle minimap"
+            >
+              Minimap
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setAnalysisOpen((v) => !v)}

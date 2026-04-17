@@ -19,11 +19,13 @@ function readNormalized(event: React.MouseEvent<SVGSVGElement>): { nx: number; n
 export default function GraphMinimap({
   state,
   width,
+  height,
   onPanTo,
   onPanMove,
 }: {
   state: GraphMinimapState;
   width?: number;
+  height?: number;
   onPanTo?: (nx: number, ny: number) => void;
   onPanMove?: (dnx: number, dny: number) => void;
 }) {
@@ -35,16 +37,19 @@ export default function GraphMinimap({
   const viewportWidth = clamp01(state.viewport.width) * viewBoxSize;
   const viewportHeight = clamp01(state.viewport.height) * viewBoxSize;
   const interactive = !!(onPanTo || onPanMove);
+  const w = width ?? 144;
+  const h = height ?? w; // default square if height not supplied
 
   return (
     <div
       className="absolute bottom-4 right-4 z-20 overflow-hidden rounded-shell-xl border border-shell-border shadow-[0_4px_24px_rgba(0,0,0,0.22)]"
-      style={{ width: width ?? 144 }}
+      style={{ width: w, height: h }}
     >
       <svg
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+        preserveAspectRatio="none"
         aria-label="Workspace minimap"
-        className={`w-full aspect-square overflow-hidden rounded-shell-xl bg-shell-bg/50 ${interactive ? 'cursor-crosshair' : ''}`}
+        className={`w-full h-full overflow-hidden bg-shell-bg/50 ${interactive ? 'cursor-crosshair' : ''}`}
         onMouseDown={(event) => {
           if (!interactive) return;
           isDraggingRef.current = true;
@@ -79,7 +84,14 @@ export default function GraphMinimap({
         {state.points.map((point) => {
           const x = clamp01(point.x) * viewBoxSize;
           const y = clamp01(point.y) * viewBoxSize;
-          const radius = point.active ? 3.1 : 2.1;
+          const radius = point.active ? 3.2 : point.related ? 2.6 : 2.1;
+          const opacity = point.dimmed ? 0.28 : point.active ? 1 : point.related ? 0.9 : 0.7;
+          const strokeColor = point.active
+            ? 'rgba(255,255,255,0.9)'
+            : point.related
+            ? 'rgba(255,255,255,0.55)'
+            : 'none';
+          const strokeWidth = point.active ? 1.2 : point.related ? 1 : 0;
 
           return (
             <circle
@@ -88,9 +100,9 @@ export default function GraphMinimap({
               cy={y}
               r={radius}
               fill={point.color}
-              opacity={point.dimmed ? 0.35 : point.active ? 0.95 : 0.75}
-              stroke={point.active ? 'rgba(15,23,42,0.85)' : 'none'}
-              strokeWidth={point.active ? 1 : 0}
+              opacity={opacity}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
             />
           );
         })}
@@ -100,9 +112,9 @@ export default function GraphMinimap({
           y={viewportY}
           width={Math.max(10, viewportWidth)}
           height={Math.max(10, viewportHeight)}
-          rx={4}
-          fill="rgba(124,58,237,0.08)"
-          stroke="rgba(124,58,237,0.85)"
+          rx={3}
+          fill="rgba(124,58,237,0.07)"
+          stroke="rgba(124,58,237,0.8)"
           strokeWidth={1.5}
         />
       </svg>

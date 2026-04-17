@@ -148,6 +148,17 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
     const right = (viewport.width - transform.x) / transform.k;
     const bottom = (viewport.height - transform.y) / transform.k;
 
+    const selId = selectedNodeIdRef.current;
+    const relatedIds = selId
+      ? new Set(
+          edgesRef.current.flatMap((e) =>
+            e.source.id === selId ? [e.target.id]
+            : e.target.id === selId ? [e.source.id]
+            : [],
+          ),
+        )
+      : null;
+
     onMinimapStateChange({
       label: '2D',
       points: nodesRef.current.map((node) => ({
@@ -155,8 +166,9 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
         x: (node.x - bounds.minX) / width,
         y: (node.y - bounds.minY) / height,
         color: node.color,
-        active: selectedNodeIdRef.current === node.id,
+        active: selId === node.id,
         dimmed: !activeEntityTypesRef.current.includes(node.type),
+        related: relatedIds ? relatedIds.has(node.id) : false,
       })),
       viewport: {
         x: Math.max(0, Math.min(1, (left - bounds.minX) / width)),
