@@ -31,14 +31,16 @@ export default function GraphMinimap({
 }) {
   const isDraggingRef = useRef(false);
   const prevPosRef = useRef<{ nx: number; ny: number } | null>(null);
-  const viewBoxSize = 100;
-  const viewportX = clamp01(state.viewport.x) * viewBoxSize;
-  const viewportY = clamp01(state.viewport.y) * viewBoxSize;
-  const viewportWidth = clamp01(state.viewport.width) * viewBoxSize;
-  const viewportHeight = clamp01(state.viewport.height) * viewBoxSize;
-  const interactive = !!(onPanTo || onPanMove);
   const w = width ?? 144;
   const h = height ?? w; // default square if height not supplied
+  // viewBox matches the container's aspect ratio so circles stay round (no stretch)
+  const vbW = 100;
+  const vbH = w > 0 ? (100 * h) / w : 100;
+  const viewportX = clamp01(state.viewport.x) * vbW;
+  const viewportY = clamp01(state.viewport.y) * vbH;
+  const viewportWidth = clamp01(state.viewport.width) * vbW;
+  const viewportHeight = clamp01(state.viewport.height) * vbH;
+  const interactive = !!(onPanTo || onPanMove);
 
   return (
     <div
@@ -46,8 +48,7 @@ export default function GraphMinimap({
       style={{ width: w, height: h }}
     >
       <svg
-        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${vbW} ${vbH}`}
         aria-label="Workspace minimap"
         className={`w-full h-full overflow-hidden bg-shell-bg/50 ${interactive ? 'cursor-crosshair' : ''}`}
         onMouseDown={(event) => {
@@ -82,8 +83,8 @@ export default function GraphMinimap({
         }}
       >
         {state.points.map((point) => {
-          const x = clamp01(point.x) * viewBoxSize;
-          const y = clamp01(point.y) * viewBoxSize;
+          const x = clamp01(point.x) * vbW;
+          const y = clamp01(point.y) * vbH;
           const radius = point.active ? 3.2 : point.related ? 2.6 : 2.1;
           const opacity = point.dimmed ? 0.28 : point.active ? 1 : point.related ? 0.9 : 0.7;
           const strokeColor = point.active
