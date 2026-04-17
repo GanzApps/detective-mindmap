@@ -27,6 +27,7 @@ jest.mock('@/components/graph/ForceGraph2D', () => ({
       getCanvas: () => ({ width: 800, height: 600, dataset: { renderer: '2d' } }),
       redrawForExport: () => {},
       captureDataUrl: () => 'data:image/png;base64,2d',
+      panTo: () => {},
     }));
 
     return (
@@ -56,6 +57,7 @@ jest.mock('@/components/graph/MindMap3D', () => ({
       getCanvas: () => ({ width: 1024, height: 768, dataset: { renderer: '3d' } }),
       redrawForExport: () => {},
       captureDataUrl: () => 'data:image/png;base64,3d',
+      panTo: () => {},
     }));
 
     return (

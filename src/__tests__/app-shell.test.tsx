@@ -105,7 +105,7 @@ describe('app shell smoke', () => {
 
     expect(html).toContain('graph-renderer-2d');
     expect(html).toContain('graph-renderer-3d');
-    expect(html).toContain('Minimap');
+    expect(html).toContain('Workspace minimap');
     expect(html).toContain('display:block');
     expect(html).toContain('display:none');
   });

@@ -34,6 +34,7 @@ interface GraphWorkspaceProps {
   highlightedNodeIds: string[];
   searchQuery: string;
   committedSearchNodeId: string | null;
+  showMinimap?: boolean;
   onSetViewMode: (viewMode: ViewMode) => void;
   onSelectNode: (nodeId: string | null) => void;
 }
@@ -77,10 +78,13 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   highlightedNodeIds,
   searchQuery,
   committedSearchNodeId,
+  showMinimap = true,
   onSetViewMode,
   onSelectNode,
 }, ref) {
   const [nodePositions, setNodePositions] = useState<Record<string, SharedNodePosition>>({});
+  const [minimapWidth, setMinimapWidth] = useState(144);
+  const graphCanvasContainerRef = useRef<HTMLDivElement | null>(null);
   const fallbackMinimapState = useMemo(
     () => buildFallbackMinimapState(caseData.graph, viewMode, selectedNodeId),
     [caseData.graph, viewMode, selectedNodeId],
@@ -100,6 +104,17 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   useEffect(() => {
     setNodePositions({});
   }, [caseData.id]);
+
+  useEffect(() => {
+    const el = graphCanvasContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      setMinimapWidth(Math.max(80, Math.min(240, Math.round(w * 0.2))));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -164,6 +179,14 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
     }
   }, [viewMode]);
 
+  const handleMinimapPanTo = useCallback((nx: number, ny: number) => {
+    if (viewMode === '2d') {
+      forceGraphRef.current?.panTo(nx, ny);
+    } else {
+      mindMapRef.current?.panTo(nx, ny);
+    }
+  }, [viewMode]);
+
   const handleUpdateNodePosition = useCallback((nodeId: string, position: SharedNodePosition) => {
     setNodePositions((current) => {
       const existing = current[nodeId];
@@ -181,7 +204,7 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
   return (
     <div data-testid="graph-workspace" className="relative flex h-full flex-col">
       {/* Graph canvas fills available space — no header panel */}
-      <div className="relative min-h-0 flex-1">
+      <div ref={graphCanvasContainerRef} className="relative min-h-0 flex-1">
         <div
           ref={forceGraphContainerRef}
           className="h-full"
@@ -228,7 +251,13 @@ const GraphWorkspace = forwardRef<GraphWorkspaceExportHandle, GraphWorkspaceProp
           />
         </div>
 
-        <GraphMinimap state={minimapState} />
+        {showMinimap && (
+          <GraphMinimap
+            state={minimapState}
+            width={minimapWidth}
+            onPanTo={handleMinimapPanTo}
+          />
+        )}
       </div>
     </div>
   );

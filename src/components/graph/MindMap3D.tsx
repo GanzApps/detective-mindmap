@@ -17,6 +17,7 @@ export interface MindMap3DExportHandle {
   getCanvas: () => HTMLCanvasElement | null;
   redrawForExport: () => void;
   captureDataUrl: () => string | null;
+  panTo: (nx: number, ny: number) => void;
 }
 
 const MindMap3D = forwardRef<MindMap3DExportHandle, {
@@ -170,6 +171,23 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
       drawCurrentFrame();
       updateTooltip();
       return canvasRef.current?.toDataURL('image/png') ?? null;
+    },
+    panTo: (nx: number, ny: number) => {
+      const frame = frameRef.current;
+      const viewport = viewportRef.current;
+      if (!frame || frame.projectedNodes.length === 0) return;
+      const projectedNodes = frame.projectedNodes;
+      const minX = Math.min(...projectedNodes.map((n) => n.sx));
+      const maxX = Math.max(...projectedNodes.map((n) => n.sx));
+      const minY = Math.min(...projectedNodes.map((n) => n.sy));
+      const maxY = Math.max(...projectedNodes.map((n) => n.sy));
+      const targetX = minX + nx * (maxX - minX);
+      const targetY = minY + ny * (maxY - minY);
+      cameraRef.current.offsetX += viewport.width / 2 - targetX;
+      cameraRef.current.offsetY += viewport.height / 2 - targetY;
+      autoRotateRef.current = false;
+      needsRedrawRef.current = true;
+      emitMinimapState();
     },
   }), [graph]);
 

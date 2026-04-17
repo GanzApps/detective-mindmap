@@ -90,6 +90,7 @@ export default function CaseWorkspaceShell({
   // Collapsible panels — default: sidebar open, analysis panel hidden
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [showMinimap, setShowMinimap] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [committedSearchNodeId, setCommittedSearchNodeId] = useState<string | null>(null);
   // Expandable connections section inside sidebar
@@ -130,6 +131,7 @@ export default function CaseWorkspaceShell({
     highlightedNodeIds: highlightedEntityIds,
     searchQuery,
     committedSearchNodeId,
+    showMinimap,
     onSetViewMode,
     onSelectNode,
   };
@@ -255,6 +257,16 @@ export default function CaseWorkspaceShell({
             className="rounded-lg bg-shell-accent px-3 py-1 text-xs font-semibold text-white transition hover:bg-shell-accent-hover"
           >
             + Entity
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowMinimap((v) => !v)}
+            className={`rounded p-1 transition ${showMinimap ? 'text-shell-accent' : 'text-shell-text-muted hover:text-shell-text-secondary'}`}
+            title="Toggle minimap"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" />
+            </svg>
           </button>
           <button
             type="button"

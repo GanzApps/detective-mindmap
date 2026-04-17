@@ -35,6 +35,7 @@ export interface ForceGraph2DExportHandle {
   getCanvas: () => HTMLCanvasElement | null;
   redrawForExport: () => void;
   captureDataUrl: () => string | null;
+  panTo: (nx: number, ny: number) => void;
 }
 
 function getFitTransform(
@@ -222,6 +223,24 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
 
       drawCurrentFrame();
       return canvasRef.current?.toDataURL('image/png') ?? null;
+    },
+    panTo: (nx: number, ny: number) => {
+      const selection = d3SelectionRef.current;
+      const behavior = zoomBehaviorRef.current;
+      if (!selection || !behavior || nodesRef.current.length === 0) return;
+      const bounds = getGraphBounds(nodesRef.current);
+      const worldX = bounds.minX + nx * bounds.width;
+      const worldY = bounds.minY + ny * bounds.height;
+      const k = transformRef.current.k;
+      const nextTransform = zoomIdentity
+        .translate(
+          viewportRef.current.width / 2 - worldX * k,
+          viewportRef.current.height / 2 - worldY * k,
+        )
+        .scale(k);
+      selection.call(behavior.transform, nextTransform);
+      userAdjustedViewportRef.current = true;
+      emitMinimapState();
     },
   }), []);
 
