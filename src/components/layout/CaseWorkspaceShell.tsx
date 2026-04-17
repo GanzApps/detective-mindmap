@@ -228,7 +228,13 @@ export default function CaseWorkspaceShell({
           </button>
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold text-shell-text-primary">{caseData.name}</h1>
-            <span className="rounded-full border border-shell-border px-2 py-0.5 text-[10px] uppercase tracking-wider text-shell-text-muted">
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider font-medium ${
+              caseData.status === 'active'
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                : caseData.status === 'closed'
+                  ? 'border-shell-border bg-shell-surface-raised text-shell-text-muted'
+                  : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
+            }`}>
               {caseData.status}
             </span>
           </div>

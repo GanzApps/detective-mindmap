@@ -204,6 +204,7 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
       showEdgeLabels: showEdgeLabelsRef.current,
       showNodeLabels: showNodeLabelsRef.current,
       focusSelectedNeighborhood: focusSelectedNeighborhoodRef.current,
+      theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
     });
   }
 
@@ -348,6 +349,13 @@ const ForceGraph2D = forwardRef<ForceGraph2DExportHandle, {
   useEffect(() => {
     nodePositionsRef.current = nodePositions;
   }, [nodePositions]);
+
+  // Redraw when the page theme changes (data-theme on <html>)
+  useEffect(() => {
+    const observer = new MutationObserver(() => scheduleDraw());
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     searchMatchIdsRef.current = [];

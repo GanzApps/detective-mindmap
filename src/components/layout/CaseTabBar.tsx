@@ -10,6 +10,7 @@ import {
   type CreateCaseInput,
 } from '@/store/caseStore';
 import CaseModal from '@/components/crud/CaseModal';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function CaseTabBar() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function CaseTabBar() {
   const goHome = useCaseStore((state) => state.goHome);
 
   const [showCaseModal, setShowCaseModal] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   // Listen for Ctrl+T new-case trigger from CaseShellLayout
   useEffect(() => {
@@ -103,6 +105,25 @@ export default function CaseTabBar() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
           New
+        </button>
+
+        {/* Theme toggle — far right */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="ml-auto rounded p-1.5 text-shell-text-muted transition hover:bg-shell-surface-raised hover:text-shell-text-secondary"
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? (
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="5" />
+              <path strokeLinecap="round" d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            </svg>
+          )}
         </button>
       </div>
 

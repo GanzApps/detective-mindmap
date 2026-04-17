@@ -60,6 +60,7 @@ export interface DrawGraph2DOptions {
   showEdgeLabels?: boolean;
   showNodeLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
+  theme?: 'dark' | 'light';
 }
 
 export interface GraphBounds {
@@ -376,6 +377,7 @@ export function drawGraph2D(
 ) {
   const transform = options.transform ?? DEFAULT_TRANSFORM;
   const focusSelectedNeighborhood = options.focusSelectedNeighborhood ?? true;
+  const isDark = (options.theme ?? 'light') === 'dark';
   // Only focus-dim when the selected node actually exists in the graph (guards stale localStorage ids)
   const selectedNodeExists = options.selectedId
     ? nodes.some((n) => n.id === options.selectedId)
@@ -403,20 +405,20 @@ export function drawGraph2D(
   }
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = isDark ? '#020617' : '#f8fafc';
   ctx.fillRect(0, 0, width, height);
 
   if (typeof ctx.createRadialGradient === 'function') {
     const glow = ctx.createRadialGradient(width * 0.35, height * 0.18, 10, width * 0.35, height * 0.18, width * 0.75);
     glow.addColorStop(0, 'rgba(124,58,237,0.08)');
-    glow.addColorStop(0.4, 'rgba(255,255,255,0.03)');
-    glow.addColorStop(1, 'rgba(248,250,252,0)');
+    glow.addColorStop(0.4, isDark ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)');
+    glow.addColorStop(1, isDark ? 'rgba(2,6,23,0)' : 'rgba(248,250,252,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
   }
 
   ctx.save();
-  ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+  ctx.strokeStyle = isDark ? 'rgba(30,41,59,0.5)' : 'rgba(148,163,184,0.12)';
   ctx.lineWidth = 1;
   for (let x = 24; x < width; x += 28) {
     ctx.beginPath();
@@ -474,7 +476,9 @@ export function drawGraph2D(
       ctx.save();
       ctx.translate(midpointX, midpointY);
       ctx.rotate(angle);
-      ctx.fillStyle = isSelectedEdge ? 'rgba(51,65,85,0.92)' : 'rgba(71,85,105,0.7)';
+      ctx.fillStyle = isDark
+        ? (isSelectedEdge ? 'rgba(226,232,240,0.92)' : 'rgba(148,163,184,0.7)')
+        : (isSelectedEdge ? 'rgba(51,65,85,0.92)' : 'rgba(71,85,105,0.7)');
       ctx.font = `${isSelectedEdge ? 13 : 12}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
@@ -521,7 +525,7 @@ export function drawGraph2D(
     drawNodeShape(ctx, node, node.radius);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(51,65,85,0.95)';
+    ctx.fillStyle = isDark ? 'rgba(226,232,240,0.95)' : 'rgba(51,65,85,0.95)';
     ctx.font = `${node.radius * 0.62}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -539,14 +543,14 @@ export function drawGraph2D(
       const chipWidth = textWidth + 20;
       const chipHeight = 28;
 
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillStyle = isDark ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.92)';
       ctx.strokeStyle = rgbaFromHex(node.color, isSelected ? 0.88 : 0.65);
       ctx.lineWidth = 1.4;
       drawRoundedRect(ctx, chipX, chipY, chipWidth, chipHeight, 8);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = 'rgba(51,65,85,0.96)';
+      ctx.fillStyle = isDark ? 'rgba(226,232,240,0.96)' : 'rgba(51,65,85,0.96)';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(node.label, chipX + 10, chipY + chipHeight / 2);

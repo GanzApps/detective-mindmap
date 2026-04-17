@@ -22,6 +22,7 @@ interface DrawOptions {
   showLabels?: boolean;
   focusSelectedNeighborhood?: boolean;
   sharedPositions?: Record<string, SharedNodePosition>;
+  theme?: 'dark' | 'light';
 }
 
 interface FramePreparation {
@@ -113,9 +114,10 @@ export function drawFrame3D(
 ) {
   const prepared = prepareFrame3D(graph, camera, viewport, options);
   const showLabels = options.showLabels ?? true;
+  const isDark = (options.theme ?? 'dark') === 'dark';
 
   ctx.clearRect(0, 0, viewport.width, viewport.height);
-  ctx.fillStyle = '#08101f';
+  ctx.fillStyle = isDark ? '#08101f' : '#f8fafc';
   ctx.fillRect(0, 0, viewport.width, viewport.height);
 
   const backgroundGlow = ctx.createRadialGradient(
@@ -126,9 +128,15 @@ export function drawFrame3D(
     viewport.height * 0.24,
     viewport.width * 0.82,
   );
-  backgroundGlow.addColorStop(0, 'rgba(124,58,237,0.08)');
-  backgroundGlow.addColorStop(0.48, 'rgba(15,23,42,0.05)');
-  backgroundGlow.addColorStop(1, 'rgba(8,16,31,0)');
+  if (isDark) {
+    backgroundGlow.addColorStop(0, 'rgba(124,58,237,0.08)');
+    backgroundGlow.addColorStop(0.48, 'rgba(15,23,42,0.05)');
+    backgroundGlow.addColorStop(1, 'rgba(8,16,31,0)');
+  } else {
+    backgroundGlow.addColorStop(0, 'rgba(124,58,237,0.06)');
+    backgroundGlow.addColorStop(0.48, 'rgba(241,245,249,0.04)');
+    backgroundGlow.addColorStop(1, 'rgba(248,250,252,0)');
+  }
   ctx.fillStyle = backgroundGlow;
   ctx.fillRect(0, 0, viewport.width, viewport.height);
 
@@ -157,7 +165,7 @@ export function drawFrame3D(
     ctx.lineTo(target.sx, target.sy);
 
     if (isDimmed) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
       ctx.lineWidth = 0.7;
     } else if (isConnected) {
       const sourceColor = ENTITY_TYPE_COLOR[source.node.type];
@@ -190,7 +198,7 @@ export function drawFrame3D(
     if (isDimmed) {
       ctx.save();
       drawProjectedShape(ctx, node);
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
       ctx.fill();
       ctx.restore();
       continue;
@@ -237,7 +245,9 @@ export function drawFrame3D(
       : Math.max(0.82, 0.90 + node.depth / 800);  // no selection: subtle depth fade
     ctx.globalAlpha = isSelected || isConnected || isHighlighted ? 1 : baseAlpha;
     ctx.fill();
-    ctx.strokeStyle = rgbaFromHex('#ffffff', isSelected ? 0.9 : 0.32);
+    ctx.strokeStyle = isDark
+      ? rgbaFromHex('#ffffff', isSelected ? 0.9 : 0.32)
+      : rgbaFromHex('#000000', isSelected ? 0.18 : 0.1);
     ctx.lineWidth = isSelected ? 1.8 : 0.8;
     ctx.stroke();
     ctx.restore();
@@ -245,7 +255,7 @@ export function drawFrame3D(
     ctx.save();
     ctx.beginPath();
     ctx.arc(node.sx, node.sy, Math.max(2.2, node.radius * 0.18), 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.95)';
     ctx.strokeStyle = semanticColor;
     ctx.lineWidth = 0.8;
     ctx.fill();
@@ -274,7 +284,9 @@ export function drawFrame3D(
       ctx.font = `${node.tier <= 1 ? '500' : '400'} ${fontSize}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = `rgba(226,232,240,${alpha})`;
+      ctx.fillStyle = isDark
+        ? `rgba(226,232,240,${alpha})`
+        : `rgba(15,23,42,${alpha})`;
 
       lines.forEach((line, index) => {
         ctx.fillText(

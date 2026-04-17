@@ -44,7 +44,7 @@ export default function GraphMinimap({
 
   return (
     <div
-      className="absolute bottom-4 right-4 z-20 overflow-hidden rounded-shell-xl border border-shell-border shadow-[0_4px_24px_rgba(0,0,0,0.22)]"
+      className="absolute bottom-4 right-4 z-20 overflow-hidden border border-shell-border shadow-[0_4px_24px_rgba(0,0,0,0.22)]"
       style={{ width: w, height: h }}
     >
       <svg

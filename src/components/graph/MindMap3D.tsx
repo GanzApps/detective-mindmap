@@ -168,6 +168,7 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
           ...nodePositionsRef.current,
           ...dragPositionOverridesRef.current,
         },
+        theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
       },
     );
     needsRedrawRef.current = false;
@@ -292,6 +293,15 @@ const MindMap3D = forwardRef<MindMap3DExportHandle, {
     needsRedrawRef.current = true;
     dragPositionOverridesRef.current = {};
   }, [graph]);
+
+  // Redraw when the page theme changes (data-theme on <html>)
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      needsRedrawRef.current = true;
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (isActive) {
