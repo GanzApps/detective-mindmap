@@ -5,4 +5,4 @@ node_modules/
 tsconfig.tsbuildinfo
 .claude/settings.local.json
 .*
-!.planning
+!.planning!.pre-commit-config.yaml
